@@ -4,7 +4,9 @@ import { useAuth } from '../features/auth/AuthProvider';
 import { LoginPage } from '../features/auth/LoginPage';
 import { FriendsPage } from '../features/friends/FriendsPage';
 import { InvitePage, redeemPendingInvite } from '../features/friends/InvitePage';
+import { GamesPage } from '../features/game/GamesPage';
 import { LocalGamePage } from '../features/game/LocalGamePage';
+import { OnlineGamePage } from '../features/game/OnlineGamePage';
 import { HomePage } from './HomePage';
 
 const PLAN_LABEL: Record<string, string> = { free: 'Basis', plus: 'Plus', pro: 'Pro', family: 'Familie', club: 'Verein' };
@@ -37,6 +39,7 @@ export function App() {
         <Link to="/" className="brand">Schachzug <span>Live</span></Link>
         <nav className="nav">
           <NavLink to="/spielen">Spielen</NavLink>
+          {session && <NavLink to="/partien">Partien</NavLink>}
           {session && <NavLink to="/freunde">Freunde</NavLink>}
           {session ? (
             <span className={`pill ${entitlement?.plan && entitlement.plan !== 'free' ? 'accent' : ''}`} data-testid="plan">
@@ -53,6 +56,8 @@ export function App() {
           <Route path="/spielen" element={<LocalGamePage />} />
           <Route path="/anmelden" element={<LoginPage />} />
           <Route path="/freunde" element={<FriendsPage />} />
+          <Route path="/partien" element={<GamesPage />} />
+          <Route path="/partie/:id" element={<OnlineGamePage />} />
           <Route path="/i/:code" element={<InvitePage />} />
           <Route path="*" element={<div className="panel"><h2>Seite nicht gefunden</h2><Link to="/">Zur Startseite</Link></div>} />
         </Routes>
