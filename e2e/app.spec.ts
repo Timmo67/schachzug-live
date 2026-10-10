@@ -16,10 +16,13 @@ test('local game: scholar\'s mate ends the game', async ({ page }) => {
 });
 
 async function dragMove(page: Page, from: string, to: string) {
+  // Measure only once the layout is settled (web fonts loaded, board fully in view).
+  await page.evaluate(() => document.fonts.ready);
+  await page.getByRole('grid', { name: 'Schachbrett' }).scrollIntoViewIfNeeded();
   const a = (await page.locator(`[data-square="${from}"]`).boundingBox())!;
-  const b = (await page.locator(`[data-square="${to}"]`).boundingBox())!;
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
   await page.mouse.down();
+  const b = (await page.locator(`[data-square="${to}"]`).boundingBox())!;
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
   await page.mouse.up();
 }
