@@ -1,0 +1,63 @@
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
+import { useAuth } from '../features/auth/AuthProvider';
+import { LoginPage } from '../features/auth/LoginPage';
+import { FriendsPage } from '../features/friends/FriendsPage';
+import { InvitePage, redeemPendingInvite } from '../features/friends/InvitePage';
+import { LocalGamePage } from '../features/game/LocalGamePage';
+import { HomePage } from './HomePage';
+
+const PLAN_LABEL: Record<string, string> = { free: 'Basis', plus: 'Plus', pro: 'Pro', family: 'Familie', club: 'Verein' };
+
+export function App() {
+  const { session, entitlement, refresh } = useAuth();
+  const [toast, setToast] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  // After signing in via magic link, redeem an invite that was opened before login.
+  useEffect(() => {
+    if (!session) return;
+    void redeemPendingInvite().then(async (r) => {
+      if (!r) return;
+      setToast(r.text);
+      await refresh();
+      if (r.ok) navigate('/freunde');
+    });
+  }, [session, refresh, navigate]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  return (
+    <div className="wrap">
+      <header className="topbar">
+        <Link to="/" className="brand">Schachzug <span>Live</span></Link>
+        <nav className="nav">
+          <NavLink to="/spielen">Spielen</NavLink>
+          {session && <NavLink to="/freunde">Freunde</NavLink>}
+          {session ? (
+            <span className={`pill ${entitlement?.plan && entitlement.plan !== 'free' ? 'accent' : ''}`} data-testid="plan">
+              {PLAN_LABEL[entitlement?.plan ?? 'free']}
+            </span>
+          ) : (
+            <NavLink to="/anmelden">Anmelden</NavLink>
+          )}
+        </nav>
+      </header>
+      <main>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/spielen" element={<LocalGamePage />} />
+          <Route path="/anmelden" element={<LoginPage />} />
+          <Route path="/freunde" element={<FriendsPage />} />
+          <Route path="/i/:code" element={<InvitePage />} />
+          <Route path="*" element={<div className="panel"><h2>Seite nicht gefunden</h2><Link to="/">Zur Startseite</Link></div>} />
+        </Routes>
+      </main>
+      {toast && <div className="toast" role="status">{toast}</div>}
+    </div>
+  );
+}

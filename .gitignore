@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+ios/App/Pods/
+android/.gradle/
+android/app/build/
+supabase/.temp/
+.DS_Store
+playwright-report/
+test-results/
+*.tsbuildinfo

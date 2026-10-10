@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}*{box-sizing:border-box}</style>
+</head>
+<body>
+<title>Schachzug Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Brett als Mittelpunkt, rechts (mobil: darunter) Video, Züge und Chat als ruhige Seitenleiste */
+:root{
+  --bg:#eceff2; --surface:#ffffff; --ink:#1a2028; --muted:#5b6673; --line:#d3d9df;
+  --accent:#9c6212; --accent-ink:#ffffff; --sq-l:#e3e8eb; --sq-d:#7d95a4;
+  --mark:rgba(214,158,40,.55); --check:#cf3f2b; --ok:#2c8150;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1317; --surface:#171d23; --ink:#e4e9ee; --muted:#98a3ae; --line:#29323b;
+  --accent:#dba24a; --accent-ink:#1b1306; --sq-l:#c7d0d6; --sq-d:#58707f;
+  --mark:rgba(219,162,74,.6); --check:#e2604c; --ok:#4cb37a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1317; --surface:#171d23; --ink:#e4e9ee; --muted:#98a3ae; --line:#29323b;
+  --accent:#dba24a; --accent-ink:#1b1306; --sq-l:#c7d0d6; --sq-d:#58707f;
+  --mark:rgba(219,162,74,.6); --check:#e2604c; --ok:#4cb37a; color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45;padding:16px 16px 32px;margin:0}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.6rem;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+h2{font-family:var(--f-display);font-weight:600;font-size:1.05rem;margin:0}
+.lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)}
+button,.btn{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+button:hover,.btn:hover{border-color:var(--accent)}
+button.primary,.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input{font:inherit;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* Lobby */
+#lobby{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.code-in{text-transform:uppercase;font-family:var(--f-mono);letter-spacing:.15em;width:9.5em}
+#openGames{display:flex;flex-direction:column;gap:6px}
+.og{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+.og b{font-family:var(--f-mono);letter-spacing:.1em}
+/* Spiel */
+#game{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:820px){#game{grid-template-columns:minmax(0,1fr)}}
+.boardcol{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pbar{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:30px}
+.pname{display:flex;align-items:center;gap:8px;font-weight:600;min-width:0}
+.pname i{width:14px;height:14px;border-radius:3px;border:1px solid var(--muted);flex:none}
+.caps{font-size:1.05rem;letter-spacing:-.05em;color:var(--muted);white-space:nowrap;overflow:hidden}
+.boardbox{container-type:inline-size;width:100%;max-width:min(620px,100%);margin:0 auto}
+#board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);aspect-ratio:1;max-width:100%;border-radius:6px;overflow:hidden;box-shadow:0 1px 0 var(--line),0 10px 30px -18px rgba(0,0,0,.45);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.sq{position:relative;min-width:0;min-height:0;overflow:hidden;border:0;padding:0;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:calc(100cqw / 8 * .74);line-height:1;cursor:pointer;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
+.sq.l{background:var(--sq-l)} .sq.d{background:var(--sq-d)}
+.sq:hover{border:0}
+.sq.last::before,.sq.sel::before{content:"";position:absolute;inset:0;background:var(--mark)}
+.sq.chk::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,var(--check) 0,transparent 72%)}
+.sq .pc{position:relative;z-index:1}
+.pc.w{color:#fbfbf7;-webkit-text-stroke:1.2px #1d232a;text-shadow:0 2px 2px rgba(0,0,0,.25)}
+.pc.b{color:#14181d;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.sq .dot{position:absolute;z-index:2;width:30%;aspect-ratio:1;height:auto;border-radius:50%;background:rgba(20,24,29,.28)}
+.sq .ring{position:absolute;z-index:2;inset:5%;border-radius:50%;border:calc(100cqw/8*.07) solid rgba(20,24,29,.3)}
+.sq .cf,.sq .cr{position:absolute;z-index:1;font:600 calc(100cqw/8*.17)/1 var(--f-mono);opacity:.8}
+.sq .cf{right:4%;bottom:3%} .sq .cr{left:4%;top:4%}
+.sq.l .cf,.sq.l .cr{color:var(--sq-d)} .sq.d .cf,.sq.d .cr{color:var(--sq-l)}
+#status{font-family:var(--f-display);font-weight:600;font-size:1.15rem}
+#status.end{color:var(--accent)}
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.codebox{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.code{font-family:var(--f-mono);font-weight:500;font-size:1.35rem;letter-spacing:.2em}
+.pill{font-size:.75rem;font-weight:600;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.pill.on{color:var(--ok);border-color:var(--ok)}
+/* Video */
+.vids{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vid{position:relative;aspect-ratio:4/3;max-width:100%;background:#0b0e11;border-radius:8px;overflow:hidden}
+.vid video{width:100%;height:100%;object-fit:cover;display:block}
+.vid span{position:absolute;left:6px;bottom:6px;font-size:.72rem;color:#fff;background:rgba(0,0,0,.5);padding:2px 6px;border-radius:4px}
+.vid .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7b8794;font-size:.8rem;text-align:center;padding:8px}
+/* Züge & Chat */
+#moves{font-family:var(--f-mono);font-size:.88rem;display:grid;grid-template-columns:2.4em 1fr 1fr;gap:2px 8px;max-height:180px;overflow:auto;font-variant-numeric:tabular-nums}
+#moves .n{color:var(--muted)}
+#chatlog{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow:auto;font-size:.9rem}
+#chatlog p{margin:0;overflow-wrap:anywhere} #chatlog b{font-weight:600}
+#chatform{display:flex;gap:8px} #chatform input{flex:1}
+/* Umwandlung / Toast */
+#promo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+#promo .panel{flex-direction:row;gap:8px}
+#promo button{font-size:2.4rem;width:64px;height:64px;padding:0;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-weight:600;z-index:30;max-width:calc(100% - 32px)}
+.note{font-size:.85rem;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.sq .pc{transition:transform .12s}.sq.sel .pc{transform:scale(1.08)}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Schachzug <span>Live</span></h1>
+    <div class="row"><span class="pill" id="modePill">Lädt…</span></div>
+  </header>
+
+  <!-- LOBBY -->
+  <section id="lobby">
+    <div class="panel">
+      <span class="lbl">Dein Name</span>
+      <input id="nameIn" maxlength="24" placeholder="z. B. Thomas" autocomplete="nickname">
+      <span class="lbl">Neue Partie</span>
+      <p class="note" style="margin:0">Du spielst Weiß und bekommst einen Partie-Code, den du deinem Gegner schickst.</p>
+      <button class="primary" id="createBtn">Partie erstellen</button>
+    </div>
+    <div class="panel">
+      <span class="lbl">Partie beitreten</span>
+      <form class="row" id="joinForm"><input id="codeIn" class="code-in" maxlength="6" placeholder="CODE" autocomplete="off"><button type="submit">Beitreten</button></form>
+      <div id="openWrap" hidden>
+        <span class="lbl">Offene Partien</span>
+        <div id="openGames"></div>
+      </div>
+      <span class="lbl">Ohne Verbindung</span>
+      <button id="localBtn">Auf einem Gerät spielen</button>
+    </div>
+    <div class="panel" id="lobbyInfo">
+      <span class="lbl">So funktioniert der Videochat</span>
+      <p class="note" style="margin:0" id="videoInfo"></p>
+    </div>
+  </section>
+
+  <!-- SPIEL -->
+  <section id="game" hidden>
+    <div class="boardcol">
+      <div class="pbar"><div class="pname"><i id="topSw"></i><span id="topName">—</span></div><span class="caps" id="topCaps"></span></div>
+      <div class="boardbox"><div id="board" role="grid" aria-label="Schachbrett"></div></div>
+      <div class="pbar"><div class="pname"><i id="botSw"></i><span id="botName">—</span></div><span class="caps" id="botCaps"></span></div>
+      <div class="row" style="justify-content:space-between">
+        <div id="status" aria-live="polite">Weiß am Zug</div>
+        <div class="row">
+          <button id="flipBtn" title="Brett drehen">Drehen</button>
+          <button id="resignBtn">Aufgeben</button>
+          <button id="newBtn">Neue Partie</button>
+        </div>
+      </div>
+      <div class="row" id="confirmRow" hidden><span id="confirmTxt"></span><button class="primary" id="confirmYes">Ja</button><button id="confirmNo">Abbrechen</button></div>
+    </div>
+
+    <div class="side">
+      <div class="panel" id="codePanel">
+        <div class="codebox">
+          <div><div class="lbl">Partie-Code</div><div class="code" id="codeOut">——</div></div>
+          <span class="pill" id="connPill">Warte auf Gegner</span>
+        </div>
+        <div class="row"><button id="copyBtn">Code kopieren</button><button id="leaveBtn">Zur Lobby</button></div>
+      </div>
+
+      <div class="panel" id="videoPanel">
+        <div class="row" style="justify-content:space-between"><h2>Videochat</h2><span class="pill" id="vidPill">aus</span></div>
+        <div id="inlineVideo" hidden>
+          <div class="vids">
+            <div class="vid"><video id="remoteV" autoplay playsinline></video><div class="ph" id="remotePh">Gegner noch ohne Kamera</div><span>Gegner</span></div>
+            <div class="vid"><video id="localV" autoplay playsinline muted></video><div class="ph" id="localPh">Kamera aus</div><span>Du</span></div>
+          </div>
+          <div class="row" style="margin-top:10px"><button class="primary" id="camBtn">Kamera starten</button><button id="micBtn" disabled>Mikro aus</button><button id="vidOffBtn" disabled>Bild aus</button></div>
+        </div>
+        <div id="extVideo">
+          <p class="note" style="margin:0">Öffnet einen Jitsi-Meet-Raum, der fest zu dieser Partie gehört. Beide Spieler landen automatisch im selben Raum, ohne Konto (Browser oder Jitsi-App).</p>
+          <div class="row" style="margin-top:10px"><a class="btn primary" id="jitsiLink" target="_blank" rel="noopener">Videoraum öffnen</a><button id="jitsiCopy">Link kopieren</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Züge</h2>
+        <div id="moves"><span class="n muted">–</span><span class="muted">noch keine</span><span></span></div>
+      </div>
+
+      <div class="panel" id="chatPanel">
+        <h2>Chat</h2>
+        <div id="chatlog"><p class="muted">Nachrichten erscheinen hier.</p></div>
+        <form id="chatform"><input id="chatIn" maxlength="300" placeholder="Nachricht…" autocomplete="off"><button type="submit">Senden</button></form>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="promo" hidden><div class="panel" id="promoBox"></div></div>
+<div id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const GLYPH = {k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"};
+const VS = "︎"; // Textdarstellung erzwingen (kein Emoji-Bauer auf iOS)
+const ALPH = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const PEER_PREFIX = "schachzug-live-";
+const IS_ARTIFACT = !!(window.claude && typeof window.claude.use === "function");
+const HAS_PEER = typeof window.Peer === "function";
+
+const S = {
+  mode: null,          // "local" | "room" | "peer"
+  code: null, seat: "w", creating: false,
+  game: new Chess(), moves: [], epoch: 0, resign: null,
+  sel: null, flipped: false, players: {w:null, b:null}, connected: false,
+  net: null, pendingConfirm: null,
+};
+
+/* ---------- Hilfen ---------- */
+const store = {
+  get(k){ try{ return localStorage.getItem(k) }catch(e){ return null } },
+  set(k,v){ try{ localStorage.setItem(k,v) }catch(e){} }
+};
+function toast(t){ const el=$("#toast"); el.textContent=t; el.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>el.hidden=true,2200) }
+function myName(){ return ($("#nameIn").value.trim() || "Spieler").slice(0,24) }
+function newCode(){ let s=""; const a=new Uint32Array(6); crypto.getRandomValues(a); for(const x of a) s+=ALPH[x%ALPH.length]; return s }
+function cleanCode(c){ return (c||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6) }
+async function copy(text, okMsg){
+  try{ await navigator.clipboard.writeText(text); toast(okMsg) }
+  catch(e){ toast(text) }
+}
+function jitsiUrl(){ return "https://meet.jit.si/SchachzugLive-" + S.code }
+
+/* ---------- Spiellogik ---------- */
+function rebuild(list){
+  const g = new Chess();
+  for(const m of list){
+    if(typeof m!=="string" || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(m)) return null;
+    const r = g.move({from:m.slice(0,2), to:m.slice(2,4), promotion:m[4]||"q"});
+    if(!r) return null;
+  }
+  return g;
+}
+function resultText(){
+  const g=S.game;
+  if(S.resign) return (S.resign==="w"?"Weiß":"Schwarz")+" gibt auf – "+(S.resign==="w"?"Schwarz":"Weiß")+" gewinnt";
+  if(g.in_checkmate()) return "Schachmatt – "+(g.turn()==="w"?"Schwarz":"Weiß")+" gewinnt";
+  if(g.in_stalemate()) return "Remis durch Patt";
+  if(g.in_threefold_repetition()) return "Remis durch dreifache Wiederholung";
+  if(g.insufficient_material()) return "Remis – zu wenig Material";
+  if(g.in_draw()) return "Remis (50-Züge-Regel)";
+  return null;
+}
+function over(){ return !!resultText() }
+function canMove(){
+  if(over()) return false;
+  if(S.mode==="local") return true;
+  return S.seat===S.game.turn() && S.connected;
+}
+function stateMsg(){ return {t:"state", e:S.epoch, m:S.moves, r:S.resign} }
+function broadcast(){ if(S.net) S.net.send(stateMsg()) }
+
+function applyMove(from,to,promo){
+  const r = S.game.move({from,to,promotion:promo||"q"});
+  if(!r) return false;
+  S.moves.push(from+to+(r.promotion||""));
+  S.sel=null; broadcast(); render(); return true;
+}
+
+function onSquare(sq){
+  if(!canMove()){ if(!over() && S.mode!=="local") toast(S.seat==="s"?"Du schaust zu.":(!S.connected?"Warte auf den Gegner.":"Dein Gegner ist am Zug.")); return }
+  const g=S.game, p=g.get(sq);
+  if(S.sel){
+    const legal = g.moves({square:S.sel, verbose:true}).filter(m=>m.to===sq);
+    if(legal.length){
+      if(legal.some(m=>m.flags.includes("p"))) return askPromo(S.sel,sq);
+      applyMove(S.sel,sq); return;
+    }
+  }
+  S.sel = (p && p.color===g.turn() && S.sel!==sq) ? sq : null;
+  render();
+}
+function askPromo(from,to){
+  const box=$("#promoBox"); box.textContent="";
+  const c=S.game.turn();
+  for(const t of ["q","r","b","n"]){
+    const b=document.createElement("button");
+    b.innerHTML='<span class="pc '+c+'">'+GLYPH[t]+VS+'</span>';
+    b.setAttribute("aria-label",{q:"Dame",r:"Turm",b:"Läufer",n:"Springer"}[t]);
+    b.onclick=()=>{ $("#promo").hidden=true; applyMove(from,to,t) };
+    box.appendChild(b);
+  }
+  $("#promo").hidden=false;
+}
+$("#promo").addEventListener("click",e=>{ if(e.target.id==="promo"){ $("#promo").hidden=true; S.sel=null; render() } });
+
+/* eingehende Nachrichten (vom Netz) */
+function handle(d){
+  if(!d || typeof d!=="object") return;
+  if(d.t==="state"){
+    const e=+d.e||0, m=Array.isArray(d.m)?d.m.slice(0,600):[], r=(d.r==="w"||d.r==="b")?d.r:null;
+    const newer = e>S.epoch || (e===S.epoch && (m.length>S.moves.length || (m.length===S.moves.length && r && !S.resign)));
+    if(!newer) return;
+    const g=rebuild(m); if(!g) return;
+    S.epoch=e; S.moves=m; S.game=g; S.resign=r; S.sel=null; render();
+  } else if(d.t==="hello"){
+    if(S.seat!=="s") broadcast();
+  } else if(d.t==="chat"){
+    addChat(String(d.n||"Gast").slice(0,24), String(d.x||"").slice(0,300));
+  }
+}
+
+/* ---------- Darstellung ---------- */
+function render(){
+  const g=S.game, board=$("#board");
+  const flip = S.flipped !== (S.seat==="b");
+  const last = S.moves.length ? S.moves[S.moves.length-1] : null;
+  let kingSq=null;
+  if(g.in_check()){ for(const f of "abcdefgh") for(let r=1;r<=8;r++){ const p=g.get(f+r); if(p&&p.type==="k"&&p.color===g.turn()) kingSq=f+r } }
+  const targets = S.sel ? g.moves({square:S.sel,verbose:true}) : [];
+  board.textContent="";
+  for(let row=0;row<8;row++) for(let col=0;col<8;col++){
+    const fi = flip?7-col:col, ri = flip?row:7-row;
+    const sq = "abcdefgh"[fi]+(ri+1);
+    const el=document.createElement("button");
+    el.className="sq "+((fi+ri)%2?"l":"d");
+    if(last && (last.slice(0,2)===sq||last.slice(2,4)===sq)) el.classList.add("last");
+    if(S.sel===sq) el.classList.add("sel");
+    if(kingSq===sq) el.classList.add("chk");
+    const p=g.get(sq);
+    el.setAttribute("aria-label", sq+(p?" "+(p.color==="w"?"weiß ":"schwarz ")+p.type:""));
+    if(p){ const s=document.createElement("span"); s.className="pc "+p.color; s.textContent=GLYPH[p.type]+VS; el.appendChild(s) }
+    const t=targets.find(m=>m.to===sq);
+    if(t){ const m=document.createElement("span"); m.className=p?"ring":"dot"; el.appendChild(m) }
+    if(row===7){ const c=document.createElement("span"); c.className="cf"; c.textContent="abcdefgh"[fi]; el.appendChild(c) }
+    if(col===0){ const c=document.createElement("span"); c.className="cr"; c.textContent=ri+1; el.appendChild(c) }
+    el.addEventListener("click",()=>onSquare(sq));
+    board.appendChild(el);
+  }
+  // Spielerleisten
+  const bottom = flip?"b":"w", top = flip?"w":"b";
+  const nm = c => S.mode==="local" ? (c==="w"?"Weiß":"Schwarz") : (S.players[c] || (c===S.seat? myName() : "wartet…"));
+  $("#topName").textContent=nm(top); $("#botName").textContent=nm(bottom);
+  $("#topSw").style.background = top==="w"?"#fbfbf7":"#14181d";
+  $("#botSw").style.background = bottom==="w"?"#fbfbf7":"#14181d";
+  const caps=captured();
+  $("#topCaps").textContent=caps[top]; $("#botCaps").textContent=caps[bottom];
+  // Status
+  const res=resultText(), st=$("#status");
+  st.classList.toggle("end",!!res);
+  st.textContent = res || ((g.turn()==="w"?"Weiß":"Schwarz")+" am Zug"+(g.in_check()?" – Schach!":"")+
+    (S.mode!=="local" && S.seat!=="s" ? (g.turn()===S.seat?" (du)":"") : ""));
+  $("#resignBtn").disabled = !!res || S.seat==="s" || (S.mode!=="local" && !S.connected);
+  $("#newBtn").disabled = S.seat==="s";
+  // Zugliste
+  const mv=$("#moves"); mv.textContent="";
+  const hist=g.history();
+  if(!hist.length){ mv.innerHTML='<span class="n">–</span><span class="muted">noch keine</span><span></span>' }
+  for(let i=0;i<hist.length;i+=2){
+    const n=document.createElement("span"); n.className="n"; n.textContent=(i/2+1)+".";
+    const a=document.createElement("span"); a.textContent=hist[i];
+    const b=document.createElement("span"); b.textContent=hist[i+1]||"";
+    mv.append(n,a,b);
+  }
+  mv.scrollTop=mv.scrollHeight;
+  // Verbindung
+  const cp=$("#connPill");
+  if(S.mode==="local"){ cp.textContent="Ein Gerät"; cp.classList.add("on") }
+  else if(S.seat==="s"){ cp.textContent="Zuschauer"; cp.classList.toggle("on",true) }
+  else { cp.textContent=S.connected?"Gegner verbunden":"Warte auf Gegner"; cp.classList.toggle("on",S.connected) }
+}
+function captured(){
+  const start={p:8,n:2,b:2,r:2,q:1}, have={w:{p:0,n:0,b:0,r:0,q:0},b:{p:0,n:0,b:0,r:0,q:0}};
+  for(const row of S.game.board()) for(const p of row) if(p && p.type!=="k") have[p.color][p.type]++;
+  const out={w:"",b:""}; // Steine, die der jeweilige Spieler geschlagen hat
+  for(const c of ["w","b"]){ const o=c==="w"?"b":"w"; for(const t of ["q","r","b","n","p"]) out[c]+=(GLYPH[t]+VS).repeat(Math.max(0,start[t]-have[o][t])) }
+  return out;
+}
+function addChat(name,text){
+  if(!text) return;
+  const log=$("#chatlog"); if(log.firstElementChild && log.firstElementChild.classList.contains("muted")) log.textContent="";
+  const p=document.createElement("p"); const b=document.createElement("b"); b.textContent=name+": ";
+  p.append(b, document.createTextNode(text)); log.appendChild(p); log.scrollTop=log.scrollHeight;
+}
+
+/* ---------- Bedienung ---------- */
+$("#flipBtn").onclick=()=>{ S.flipped=!S.flipped; render() };
+function confirmStep(text,fn){ $("#confirmTxt").textContent=text; $("#confirmRow").hidden=false; S.pendingConfirm=fn }
+$("#confirmYes").onclick=()=>{ $("#confirmRow").hidden=true; const f=S.pendingConfirm; S.pendingConfirm=null; f&&f() };
+$("#confirmNo").onclick=()=>{ $("#confirmRow").hidden=true; S.pendingConfirm=null };
+$("#resignBtn").onclick=()=>confirmStep("Wirklich aufgeben?",()=>{ S.resign = S.mode==="local"?S.game.turn():S.seat; broadcast(); render() });
+$("#newBtn").onclick=()=>confirmStep("Neue Partie starten?",()=>{ S.epoch++; S.moves=[]; S.game=new Chess(); S.resign=null; S.sel=null; broadcast(); render() });
+$("#copyBtn").onclick=()=>copy(HAS_PEER && !IS_ARTIFACT ? location.href.split("#")[0]+"#"+S.code : S.code, "Kopiert");
+$("#jitsiCopy").onclick=()=>copy(jitsiUrl(),"Video-Link kopiert");
+$("#leaveBtn").onclick=()=>{ if(S.net&&S.net.close) S.net.close(); location.hash=""; location.reload() };
+$("#chatform").addEventListener("submit",e=>{
+  e.preventDefault(); const t=$("#chatIn").value.trim(); if(!t) return;
+  $("#chatIn").value=""; addChat(myName()+" (du)",t);
+  if(S.net) S.net.send({t:"chat",n:myName(),x:t});
+});
+$("#nameIn").value = store.get("sz-name") || "";
+$("#nameIn").addEventListener("change",()=>store.set("sz-name",$("#nameIn").value.trim()));
+
+function enterGame(){
+  $("#lobby").hidden=true; $("#game").hidden=false;
+  $("#codeOut").textContent = S.code || "—";
+  $("#codePanel").hidden = S.mode==="local";
+  $("#chatPanel").hidden = S.mode==="local";
+  $("#videoPanel").hidden = S.mode==="local";
+  $("#inlineVideo").hidden = S.mode!=="peer";
+  $("#jitsiLink").href = S.code ? jitsiUrl() : "#";
+  if(S.mode==="peer") $("#extVideo").querySelector("p").textContent="Alternativ: gemeinsamer Jitsi-Meet-Raum für diese Partie (z. B. wenn die direkte Verbindung im Firmennetz blockiert ist).";
+  render();
+}
+
+/* ---------- Modus: ein Gerät ---------- */
+$("#localBtn").onclick=()=>{ S.mode="local"; S.seat="w"; S.connected=true; S.code=null; enterGame() };
+
+/* ---------- Modus: Claude-Artifact (room) ---------- */
+let lobbyRoom=null;
+async function setupArtifact(){
+  $("#modePill").textContent="Online über Claude";
+  $("#videoInfo").textContent="Hier läuft das Brett live über Claude. Für Video öffnet jede Partie einen eigenen Jitsi-Meet-Raum mit einem Klick. In der eigenständigen Web-Version ist der Videochat direkt neben dem Brett eingebaut.";
+  lobbyRoom = await window.claude.use("room");
+  if(!lobbyRoom){ $("#modePill").textContent="Offline"; $("#createBtn").disabled=true; $("#joinForm button").disabled=true; return }
+  lobbyRoom.onPeers(ch=>renderOpen(ch.peers));
+  lobbyRoom.presence({n:myName(), open:null}).catch(()=>{});
+}
+function renderOpen(peers){
+  const list=peers.filter(p=>!p.sameTab && p.presence && typeof p.presence.open==="string");
+  $("#openWrap").hidden = !list.length || S.mode;
+  const box=$("#openGames"); box.textContent="";
+  for(const p of list.slice(0,8)){
+    const code=cleanCode(p.presence.open); if(code.length!==6) continue;
+    const d=document.createElement("div"); d.className="og";
+    const s=document.createElement("span"); s.innerHTML="<b></b> <span class='muted'></span>";
+    s.querySelector("b").textContent=code; s.querySelector(".muted").textContent=String(p.presence.n||"Spieler").slice(0,24);
+    const b=document.createElement("button"); b.textContent="Mitspielen"; b.onclick=()=>joinRoomGame(code,false);
+    d.append(s,b); box.appendChild(d);
+  }
+}
+async function joinRoomGame(code, creating){
+  S.mode="room"; S.code=code; S.creating=creating; S.seat=creating?"w":"s";
+  store.set("sz-name",myName());
+  enterGame();
+  let r;
+  try{ r = await lobbyRoom.join("sz-"+code.toLowerCase()) }catch(e){ toast("Partie-Raum nicht erreichbar"); return }
+  S.net = { send:o=>r.emit("g",o).catch(()=>{}), close:()=>{ r.leave(); lobbyRoom.presence({open:null}).catch(()=>{}) } };
+  r.on("g", msg=>{ if(!msg.sameTab) handle(msg.data) });
+  const others=()=>r.peers().filter(p=>!p.sameTab);
+  const sync=(ch)=>{
+    S.players={w:null,b:null};
+    for(const p of r.peers()){ const st=p.presence&&p.presence.seat; if((st==="w"||st==="b") && !S.players[st]) S.players[st]= p.sameTab? myName() : String(p.presence.n||"Gegner").slice(0,24) }
+    const opp = S.seat==="w"?"b":"w";
+    S.connected = S.seat==="s" ? true : others().some(p=>p.presence&&p.presence.seat===opp);
+    if(ch && ch.joined.some(p=>!p.sameTab) && S.seat!=="s") broadcast();
+    if(creating) lobbyRoom.presence({n:myName(), open: S.connected?null:code}).catch(()=>{});
+    render();
+  };
+  r.onPeers(sync);
+  if(creating){ r.presence({seat:"w", n:myName()}); }
+  else {
+    r.presence({seat:"s", n:myName()});
+    setTimeout(()=>{
+      const taken=new Set(others().map(p=>p.presence&&p.presence.seat));
+      S.seat = !taken.has("b") ? "b" : !taken.has("w") ? "w" : "s";
+      r.presence({seat:S.seat, n:myName()}); S.net.send({t:"hello"});
+      if(S.seat==="s") toast("Beide Plätze sind belegt – du schaust zu."); sync();
+    }, 1500);
+  }
+}
+
+/* ---------- Modus: eigenständige Web-App (PeerJS + WebRTC-Video) ---------- */
+let peer=null, conn=null, localStream=null, mediaCall=null;
+function setupStandalone(){
+  $("#modePill").textContent = HAS_PEER ? "Online (P2P)" : "Offline";
+  $("#videoInfo").textContent = "Video und Ton laufen direkt zwischen beiden Geräten (WebRTC), eingebaut neben dem Brett. Zusätzlich gibt es pro Partie einen Jitsi-Meet-Raum als Ausweichlösung.";
+  if(!HAS_PEER){ $("#createBtn").disabled=true; $("#joinForm button").disabled=true }
+}
+function startPeer(code, creating){
+  S.mode="peer"; S.code=code; S.seat=creating?"w":"b"; store.set("sz-name",myName());
+  location.hash=code; enterGame();
+  peer = new window.Peer(creating ? PEER_PREFIX+code : undefined);
+  S.net = { send:o=>{ if(conn && conn.open) conn.send(o) }, close:()=>peer&&peer.destroy() };
+  peer.on("error", e=>{
+    if(e.type==="unavailable-id") toast("Code ist schon vergeben – bitte neue Partie erstellen.");
+    else if(e.type==="peer-unavailable") toast("Partie nicht gefunden. Code prüfen.");
+    else toast("Verbindungsfehler: "+e.type);
+  });
+  peer.on("open", ()=>{ if(!creating) bindConn(peer.connect(PEER_PREFIX+code,{reliable:true})) });
+  peer.on("connection", c=>{ if(conn && conn.open){ c.on("open",()=>c.close()); return } bindConn(c) });
+  peer.on("call", call=>{ call.answer(localStream||undefined); bindCall(call) });
+}
+function bindConn(c){
+  conn=c;
+  c.on("open", ()=>{ S.connected=true; c.send({t:"hi", n:myName(), seat:S.seat}); if(S.seat==="w") broadcast(); else c.send({t:"hello"}); callOther(); render() });
+  c.on("data", d=>{ if(d&&d.t==="hi"){ S.players[d.seat==="w"?"w":"b"]=String(d.n||"Gegner").slice(0,24); render() } else handle(d) });
+  c.on("close", ()=>{ S.connected=false; toast("Gegner hat die Verbindung getrennt"); render() });
+}
+function callOther(){ if(conn && conn.open && localStream) bindCall(peer.call(conn.peer, localStream)) }
+function bindCall(call){
+  if(mediaCall && mediaCall!==call) try{ mediaCall.close() }catch(e){}
+  mediaCall=call;
+  call.on("stream", s=>{ $("#remoteV").srcObject=s; $("#remotePh").hidden=true; $("#vidPill").textContent="live"; $("#vidPill").classList.add("on") });
+  call.on("close", ()=>{ $("#remotePh").hidden=false });
+}
+$("#camBtn").onclick = async ()=>{
+  if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; $("#localV").srcObject=null; $("#localPh").hidden=false; $("#camBtn").textContent="Kamera starten"; $("#micBtn").disabled=$("#vidOffBtn").disabled=true; return }
+  try{
+    localStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:640}},audio:{echoCancellation:true,noiseSuppression:true}});
+    $("#localV").srcObject=localStream; $("#localPh").hidden=true; $("#camBtn").textContent="Kamera beenden";
+    $("#micBtn").disabled=$("#vidOffBtn").disabled=false; callOther();
+  }catch(e){ toast("Kein Zugriff auf Kamera/Mikrofon – bitte im Browser erlauben.") }
+};
+$("#micBtn").onclick=()=>{ const t=localStream&&localStream.getAudioTracks()[0]; if(!t) return; t.enabled=!t.enabled; $("#micBtn").textContent=t.enabled?"Mikro aus":"Mikro an" };
+$("#vidOffBtn").onclick=()=>{ const t=localStream&&localStream.getVideoTracks()[0]; if(!t) return; t.enabled=!t.enabled; $("#vidOffBtn").textContent=t.enabled?"Bild aus":"Bild an" };
+
+/* ---------- Lobby-Aktionen ---------- */
+$("#createBtn").onclick=()=>{ const c=newCode(); IS_ARTIFACT ? joinRoomGame(c,true) : startPeer(c,true) };
+$("#joinForm").addEventListener("submit",e=>{
+  e.preventDefault(); const c=cleanCode($("#codeIn").value);
+  if(c.length!==6){ toast("Der Code hat 6 Zeichen."); return }
+  IS_ARTIFACT ? joinRoomGame(c,false) : startPeer(c,false);
+});
+$("#codeIn").addEventListener("input",e=>{ e.target.value=cleanCode(e.target.value) });
+
+/* ---------- Start ---------- */
+render();
+if(IS_ARTIFACT) setupArtifact(); else setupStandalone();
+const h=cleanCode(location.hash.slice(1));
+if(h.length===6){ $("#codeIn").value=h; if(!IS_ARTIFACT && HAS_PEER) startPeer(h,false) }
+window.__sz=S;
+})();
+</script>
+
+</body>
+</html>
