@@ -57,12 +57,19 @@ export function OnlineGamePage() {
         (p) => accept(p.new as GameRow))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_messages', filter: `game_id=eq.${id}` },
         (p) => setChat((c) => (c.some((m) => m.id === (p.new as Message).id) ? c : [...c, p.new as Message])))
+      // Change feeds become active shortly after SUBSCRIBED; fetch again then so nothing in between is lost.
+      .on('system', {}, (p: { extension?: string; status?: string }) => {
+        if (p.extension === 'postgres_changes' && p.status === 'ok') { void reload(); void loadChat(); }
+      })
       .subscribe((status) => { if (status === 'SUBSCRIBED') { void reload(); void loadChat(); } });
+    // Safety net for events lost while the socket was quietly reconnecting.
+    const poll = setInterval(() => { if (document.visibilityState === 'visible') void reload(); }, 20_000);
     const wake = () => { if (document.visibilityState === 'visible') void reload(); };
     document.addEventListener('visibilitychange', wake);
     window.addEventListener('online', wake);
     return () => {
       void client.removeChannel(ch);
+      clearInterval(poll);
       document.removeEventListener('visibilitychange', wake);
       window.removeEventListener('online', wake);
     };

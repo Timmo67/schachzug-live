@@ -15,6 +15,30 @@ test('local game: scholar\'s mate ends the game', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Aufgeben' })).toBeDisabled();
 });
 
+async function dragMove(page: Page, from: string, to: string) {
+  // Measure only once the layout is settled (web fonts loaded, board fully in view).
+  await page.evaluate(() => document.fonts.ready);
+  await page.getByRole('grid', { name: 'Schachbrett' }).scrollIntoViewIfNeeded();
+  const a = (await page.locator(`[data-square="${from}"]`).boundingBox())!;
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await page.mouse.down();
+  const b = (await page.locator(`[data-square="${to}"]`).boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+  await page.mouse.up();
+}
+
+test('local game: pieces can be dragged, illegal drops are ignored', async ({ page }) => {
+  await page.goto('/spielen');
+  await dragMove(page, 'e2', 'e4');
+  await expect(page.getByTestId('moves')).toContainText('e4');
+  await dragMove(page, 'd7', 'd4'); // illegal
+  await expect(page.getByTestId('status')).toHaveText('Schwarz am Zug');
+  await dragMove(page, 'd7', 'd5');
+  await expect(page.getByTestId('moves')).toContainText('d5');
+  await move(page, 'e4', 'd5'); // tapping still works after a drag
+  await expect(page.getByTestId('moves')).toContainText('exd5');
+});
+
 test('local game: promotion picker offers a knight', async ({ page }) => {
   await page.goto('/spielen');
   for (const [a, b] of [['h2', 'h4'], ['g7', 'g5'], ['h4', 'g5'], ['f8', 'g7'], ['g5', 'g6'], ['g8', 'f6'], ['g6', 'h7'], ['h8', 'g8'], ['h7', 'g8']]) {

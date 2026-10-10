@@ -31,6 +31,9 @@ export function GamesPage() {
     const client = supabase;
     const ch = client.channel('my-games')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => void load())
+      .on('system', {}, (p: { extension?: string; status?: string }) => {
+        if (p.extension === 'postgres_changes' && p.status === 'ok') void load();
+      })
       .subscribe((s) => { if (s === 'SUBSCRIBED') void load(); });
     return () => { void client.removeChannel(ch); };
   }, [me, load]);
