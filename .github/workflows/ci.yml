@@ -13,3 +13,15 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
+  e2e-online:
+    # Full game between two browsers against a local Supabase stack (migrations + Edge Function).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx supabase start -x imgproxy,postgres-meta,supavisor,vector,logflare,mailpit,studio
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=online
+        env: { E2E_ONLINE: '1' }

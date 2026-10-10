@@ -51,3 +51,8 @@
 .chat { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; overflow-wrap: anywhere; }
 .chat p { margin: 0; font-size: .9rem; }
 .chat p.mine b { color: var(--accent); }
+
+/* Drag & drop */
+.board.live { touch-action: none; }
+.pc.lifted { opacity: .3; }
+.pc.ghost { position: fixed; z-index: 40; pointer-events: none; transform: translate(-50%, -55%); line-height: 1; }

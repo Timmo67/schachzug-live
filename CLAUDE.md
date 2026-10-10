@@ -83,7 +83,10 @@ docs/
 - **M2 Teil 1 erledigt:** Migration 0004 (`create_game`, `respond_game`, `game_action`; Spalten `base_ms`, `increment_ms`, `version`), Edge Function `make-move` (Logik in `supabase/functions/_shared/gameLogic.ts`, von Client und Funktion gemeinsam genutzt, Vitest), Realtime über `postgres_changes` auf `games`/`game_messages`. Seiten `/partien` (Herausforderungen, laufend, Archiv, PGN) und `/partie/:id` (Uhren, Aufgeben, Remis, Chat). Herausfordern aus `/freunde`.
   Clients schreiben `games` nie direkt (Insert-Policy `false`). Uhren laufen erst nach dem ersten Zug beider Seiten; Zeitüberschreitung meldet der Client per `game_action('claim_timeout')`, der Server prüft.
   Deploy der Funktion: Dateien `index.ts`, `deno.json`, `../_shared/gameLogic.ts`, `import_map_path` = `deno.json`.
-- Nächster Schritt: **M2 Teil 2** (Drag & Drop, E2E-Partie zwischen zwei Browsern mit lokalem Supabase), danach M3 Video.
+- **M2 erledigt (Teil 2):** Drag & Drop im Brett (Tippen geht weiter), E2E `e2e/online.spec.ts`: komplette Partie zwischen zwei Browsern inkl. Reload, Chat und Server-Ablehnung falscher Züge, gegen lokales Supabase (`supabase/config.toml`, `.env.e2e`, CI-Job `e2e-online`).
+  Lokal: `npx supabase start -x imgproxy,postgres-meta,supavisor,vector,logflare,mailpit,studio`, dann `E2E_ONLINE=1 npx playwright test --project=online`.
+  Realtime: nach dem `system`-Event „postgres_changes ok“ wird neu geladen (sonst gehen Änderungen direkt nach dem Verbinden verloren), zusätzlich alle 20 s.
+- Nächster Schritt: **M3 Videochat**.
 
 ## Befehle
 ```

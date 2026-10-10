@@ -12,7 +12,7 @@ export function inviteUrl(code: string) {
 }
 
 export function FriendsPage() {
-  const { session, profile } = useAuth();
+  const { session, profile, ready } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [code, setCode] = useState('');
@@ -37,6 +37,7 @@ export function FriendsPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  if (!ready) return <div className="panel"><p className="muted">Wird geladen …</p></div>;
   if (!session) return <Navigate to="/anmelden" replace />;
 
   const other = (r: Row) => (r.requester_id === me ? r.addressee_id : r.requester_id);
