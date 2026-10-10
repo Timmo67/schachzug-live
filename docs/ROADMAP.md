@@ -16,7 +16,7 @@ Jeder Meilenstein endet mit einer lauffähigen Version und einer kurzen deutsche
 - Freundesliste, Freundschaftsanfrage, persönlicher Einladungslink `/i/<code>` + QR-Code
 - **Fertig wenn:** Zwei Testnutzer können sich anmelden und befreunden (E2E-Test).
 
-## M2 – Online-Partie (ca. 120 h)
+## M2 – Online-Partie (ca. 120 h) – Teil 1 erledigt (Herausforderung, Uhren, Server-Zugprüfung, Realtime, Aufgeben/Remis, Archiv, PGN, Chat); offen: Drag & Drop, E2E mit zwei Browsern
 - Brett-Komponente (aus Prototyp portieren), Drag & Drop + Tippen, Umwandlung, Brett drehen
 - Partie erstellen/annehmen, Bedenkzeit (3+2, 5+0, 10+0, 15+10, ohne Uhr)
 - Zugvalidierung serverseitig (Edge Function `make-move`), Sync per Realtime

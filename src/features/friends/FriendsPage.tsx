@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { errorText, supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { TIME_CONTROLS, createGame, gameErrorText } from '../game/onlineGame';
 
 type Row = { requester_id: string; addressee_id: string; status: 'pending' | 'accepted' | 'blocked' };
 type Person = { id: string; display_name: string };
@@ -17,6 +18,10 @@ export function FriendsPage() {
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const me = session?.user.id;
+  const navigate = useNavigate();
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [tc, setTc] = useState<string>('10+0');
+  const [color, setColor] = useState<'w' | 'b' | 'random'>('random');
 
   const load = useCallback(async () => {
     if (!supabase || !me) return;
@@ -52,6 +57,12 @@ export function FriendsPage() {
     const { error } = await supabase.rpc('respond_friend', { p_other: id, p_action: action });
     if (error) setMsg({ ok: false, text: errorText(error) });
     void load();
+  }
+
+  async function sendChallenge(opponent: string) {
+    const r = await createGame(opponent, tc, color);
+    if ('id' in r) navigate(`/partie/${r.id}`);
+    else setMsg({ ok: false, text: gameErrorText(r.error) });
   }
 
   async function share() {
@@ -105,9 +116,27 @@ export function FriendsPage() {
             <div className="item" key={other(r)}>
               <b>{names[other(r)] ?? 'Spieler'}</b>
               <div className="row">
-                <button type="button" disabled title="Kommt mit Meilenstein M2">Herausfordern</button>
+                <button type="button" className={challenge === other(r) ? '' : 'primary'}
+                  onClick={() => setChallenge(challenge === other(r) ? null : other(r))}>Herausfordern</button>
                 <button type="button" onClick={() => respond(other(r), 'remove')}>Entfernen</button>
               </div>
+              {challenge === other(r) && (
+                <div className="challenge" data-testid="challenge">
+                  <span className="lbl">Bedenkzeit</span>
+                  <div className="row">
+                    {TIME_CONTROLS.map((t) => (
+                      <button key={t.id} type="button" className={`chip${tc === t.id ? ' on' : ''}`} aria-pressed={tc === t.id} onClick={() => setTc(t.id)}>{t.label}</button>
+                    ))}
+                  </div>
+                  <span className="lbl">Deine Farbe</span>
+                  <div className="row">
+                    {([['w', 'Weiß'], ['b', 'Schwarz'], ['random', 'Zufall']] as const).map(([c, l]) => (
+                      <button key={c} type="button" className={`chip${color === c ? ' on' : ''}`} aria-pressed={color === c} onClick={() => setColor(c)}>{l}</button>
+                    ))}
+                  </div>
+                  <div className="row"><button type="button" className="primary" onClick={() => sendChallenge(other(r))}>Herausforderung senden</button></div>
+                </div>
+              )}
             </div>
           ))}
         </div>

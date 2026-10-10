@@ -37,3 +37,10 @@ test('no horizontal scrolling on the game screen', async ({ page }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflow).toBe(false);
 });
+
+test('online game pages send signed-out visitors to the login', async ({ page }) => {
+  for (const path of ['/partien', '/partie/00000000-0000-0000-0000-000000000000']) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { name: 'Anmelden' })).toBeVisible();
+  }
+});

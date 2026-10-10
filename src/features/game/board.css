@@ -42,3 +42,12 @@
 .status.end { color: var(--accent); }
 .moves { font-family: var(--f-mono); font-size: .88rem; display: grid; grid-template-columns: 2.4em 1fr 1fr; gap: 2px 8px; max-height: 260px; overflow: auto; font-variant-numeric: tabular-nums; }
 .moves .n { color: var(--muted); }
+
+/* Online game */
+.pbar .caps { flex: 1; text-align: right; }
+.clock { font-family: var(--f-mono); font-weight: 600; font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); min-width: 4.2em; text-align: center; }
+.clock.run { border-color: var(--accent); color: var(--accent); }
+.clock.low.run { border-color: var(--check); color: var(--check); }
+.chat { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; overflow-wrap: anywhere; }
+.chat p { margin: 0; font-size: .9rem; }
+.chat p.mine b { color: var(--accent); }
