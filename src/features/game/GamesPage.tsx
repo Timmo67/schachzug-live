@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { notificationsSupported } from '../notify/useGameNotifications';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -12,6 +13,7 @@ export function GamesPage() {
   const [games, setGames] = useState<GameRow[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
+  const [permission, setPermission] = useState(() => (notificationsSupported() ? Notification.permission : 'unsupported'));
 
   const load = useCallback(async () => {
     if (!supabase || !me) return;
@@ -104,6 +106,12 @@ export function GamesPage() {
           </>
         )}
         <div className="row"><Link className="btn primary" to="/freunde">Freund herausfordern</Link></div>
+        {permission === 'default' && (
+          <div className="row">
+            <button type="button" onClick={() => void Notification.requestPermission().then(setPermission)}>Benachrichtigungen erlauben</button>
+            <span className="note">Dann meldet sich dein Browser auch, wenn Schachzug Live im Hintergrund offen ist.</span>
+          </div>
+        )}
       </div>
 
       <div className="panel">

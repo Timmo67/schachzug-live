@@ -8,7 +8,7 @@ export const supabase: SupabaseClient | null = url && key ? createClient(url, ke
 
 export type Plan = 'free' | 'plus' | 'pro' | 'family' | 'club';
 
-export type Profile = { id: string; display_name: string; invite_code: string };
+export type Profile = { id: string; display_name: string; invite_code: string; board_theme?: string; piece_set?: string };
 export type Entitlement = { plan: Plan; source: string; active_until: string | null };
 
 export function errorText(e: unknown): string {
@@ -16,6 +16,7 @@ export function errorText(e: unknown): string {
   const map: Record<string, string> = {
     invite_not_found: 'Dieser Einladungscode existiert nicht.',
     own_invite: 'Das ist dein eigener Code.',
+    design_requires_plus: 'Dieses Design gibt es mit Plus.',
     not_authenticated: 'Bitte zuerst anmelden.',
   };
   for (const k of Object.keys(map)) if (msg.includes(k)) return map[k];

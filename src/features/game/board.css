@@ -56,3 +56,7 @@
 .board.live { touch-action: none; }
 .pc.lifted { opacity: .3; }
 .pc.ghost { position: fixed; z-index: 40; pointer-events: none; transform: translate(-50%, -55%); line-height: 1; }
+
+/* SVG piece sets */
+.pc.img { width: 92%; height: 92%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; user-select: none; }
+.promo-box .pc.img { width: 52px; height: 52px; }

@@ -93,7 +93,7 @@ export function VideoPanel({ gameId, polite, opponentName }: Props) {
 
       {call.error && call.error !== 'quota' && <p className="error" role="status">{ERROR_TEXT[call.error]}</p>}
       <p className={blocked || call.error === 'quota' ? 'error' : 'note'} data-testid="video-allowance">{allowanceText(call.status)}</p>
-      <p className="note">Video läuft direkt zwischen euch und wird nicht gespeichert.</p>
+      <p className="note">Video läuft direkt zwischen euch und wird nicht gespeichert. Seid ihr im selben Raum, gibt es ein Pfeifen – dann Kopfhörer nutzen oder ein Mikro ausschalten.</p>
       {hasRemoteVideo && !stageVisible && (
         <button type="button" className="pip" aria-label={`Video von ${opponentName} – zum Videochat`}
           onClick={() => stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
