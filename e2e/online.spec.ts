@@ -210,3 +210,35 @@ test('outsiders can neither join the signalling channel nor get ICE servers', as
   expect(result).toBe('CHANNEL_ERROR');
   expect((await asCarl.functions.invoke('turn-credentials', { body: { gameId } })).error).toBeTruthy();
 });
+
+test('notifications: challenge, badge and opponent move reach the other player anywhere in the app', async ({ browser }) => {
+  const anna = await makeUser('Anna');
+  const ben = await makeUser('Ben');
+  await admin.from('friendships').insert({ requester_id: anna.id, addressee_id: ben.id, status: 'accepted' });
+  const asAnna = createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${anna.session!.access_token}` } } });
+
+  const b = await signedInPage(browser, ben.session);
+  await b.goto('/');
+  await expect(b.getByRole('heading', { name: /Hallo Ben/ })).toBeVisible();
+  await b.waitForTimeout(1500); // let the change feed come up
+
+  const { data: gameId } = await asAnna.rpc('create_game', { p_opponent: ben.id, p_time_control: 'none', p_color: 'b' });
+  await expect(b.getByTestId('notice')).toContainText('Anna fordert dich heraus');
+  await expect(b.getByTestId('badge')).toHaveText('1');
+
+  // Ben accepts from the notice; he is White, so after his move it is Anna's turn and his badge clears.
+  await b.getByTestId('notice').getByRole('button', { name: 'Ansehen' }).click();
+  await expect(b).toHaveURL(new RegExp(`/partie/${gameId}`));
+  await b.getByRole('button', { name: 'Annehmen' }).click();
+  await expect(b.getByTestId('status')).toHaveText('Du bist am Zug');
+  await b.locator('[data-square="e2"]').click();
+  await b.locator('[data-square="e4"]').click();
+  await expect(b.getByTestId('badge')).toHaveCount(0);
+
+  // Anna answers while Ben looks at another page: he gets a notice and the badge comes back.
+  await b.goto('/freunde');
+  await b.waitForTimeout(1500);
+  expect((await asAnna.functions.invoke('make-move', { body: { gameId, uci: 'e7e5' } })).error).toBeNull();
+  await expect(b.getByTestId('notice')).toContainText('Anna hat gezogen');
+  await expect(b.getByTestId('badge')).toHaveText('1');
+});

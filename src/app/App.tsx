@@ -7,6 +7,8 @@ import { InvitePage, redeemPendingInvite } from '../features/friends/InvitePage'
 import { GamesPage } from '../features/game/GamesPage';
 import { LocalGamePage } from '../features/game/LocalGamePage';
 import { OnlineGamePage } from '../features/game/OnlineGamePage';
+import { NotificationStack } from '../features/notify/NotificationStack';
+import { useGameNotifications } from '../features/notify/useGameNotifications';
 import { HomePage } from './HomePage';
 
 const PLAN_LABEL: Record<string, string> = { free: 'Basis', plus: 'Plus', pro: 'Pro', family: 'Familie', club: 'Verein' };
@@ -15,6 +17,7 @@ export function App() {
   const { session, entitlement, refresh } = useAuth();
   const [toast, setToast] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { notices, dismiss, badge } = useGameNotifications(session?.user.id);
 
   // After signing in via magic link, redeem an invite that was opened before login.
   useEffect(() => {
@@ -39,7 +42,7 @@ export function App() {
         <Link to="/" className="brand">Schachzug <span>Live</span></Link>
         <nav className="nav">
           <NavLink to="/spielen">Spielen</NavLink>
-          {session && <NavLink to="/partien">Partien</NavLink>}
+          {session && <NavLink to="/partien">Partien{badge > 0 && <span className="badge" data-testid="badge">{badge}</span>}</NavLink>}
           {session && <NavLink to="/freunde">Freunde</NavLink>}
           {session ? (
             <span className={`pill ${entitlement?.plan && entitlement.plan !== 'free' ? 'accent' : ''}`} data-testid="plan">
@@ -63,6 +66,7 @@ export function App() {
         </Routes>
       </main>
       {toast && <div className="toast" role="status">{toast}</div>}
+      <NotificationStack notices={notices} dismiss={dismiss} />
     </div>
   );
 }
