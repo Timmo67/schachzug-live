@@ -1,0 +1,21 @@
+.videobox { display: flex; flex-direction: column; gap: 8px; }
+.videobox .stage { position: relative; aspect-ratio: 4 / 3; background: #0d1114; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.videobox .stage > video { width: 100%; height: 100%; object-fit: cover; }
+.videobox .placeholder { color: #c7d0d6; font-size: .9rem; padding: 12px; text-align: center; }
+/* Own picture-in-picture in the corner, mirrored like a mirror. */
+.videobox .self { position: absolute; right: 8px; bottom: 8px; width: 30%; aspect-ratio: 4 / 3; border-radius: 6px; overflow: hidden; border: 2px solid rgba(255, 255, 255, .7); background: #222; }
+.videobox .self video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.videobox .self.off video { visibility: hidden; }
+.videobox .quality { position: absolute; left: 8px; top: 8px; font-size: .72rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: rgba(0, 0, 0, .55); color: #fff; }
+.videobox .quality.q-good::before, .videobox .quality.q-ok::before, .videobox .quality.q-poor::before { content: "● "; }
+.videobox .quality.q-good::before { color: #4cb37a; }
+.videobox .quality.q-ok::before { color: #dba24a; }
+.videobox .quality.q-poor::before { color: #e2604c; }
+.videobox .devices { display: flex; flex-direction: column; gap: 6px; }
+.videobox .devices label { display: flex; flex-direction: column; gap: 2px; font-size: .85rem; }
+.videobox select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); max-width: 100%; }
+button.danger { color: var(--check); }
+/* Mobile: compact video above the moves so the board stays fully visible. */
+@media (max-width: 820px) { .videobox .stage { aspect-ratio: 16 / 9; } }
+.pip { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 25; width: 112px; aspect-ratio: 3 / 4; padding: 0; border: 2px solid #fff; border-radius: 10px; overflow: hidden; background: #0d1114; box-shadow: 0 6px 20px -6px rgba(0, 0, 0, .5); }
+.pip video { width: 100%; height: 100%; object-fit: cover; }

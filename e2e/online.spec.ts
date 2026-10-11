@@ -27,7 +27,7 @@ async function makeUser(name: string) {
 
 /** A browser context that is already signed in (session injected before the app boots). */
 async function signedInPage(browser: Browser, session: unknown): Promise<Page> {
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ permissions: ['camera', 'microphone'] });
   await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), [STORAGE_KEY, JSON.stringify(session)]);
   return ctx.newPage();
 }
@@ -118,4 +118,95 @@ test('the server rejects a move from the player who is not on turn', async () =>
   // Clients cannot write games directly.
   const direct = await asBen.from('games').update({ result: '0-1' }).eq('id', gameId).select();
   expect(direct.data ?? []).toHaveLength(0);
+});
+
+async function friendsWithGame() {
+  const anna = await makeUser('Anna');
+  const ben = await makeUser('Ben');
+  await admin.from('friendships').insert({ requester_id: anna.id, addressee_id: ben.id, status: 'accepted' });
+  const as = (u: typeof anna) => createClient(URL, PUBLISHABLE, {
+    auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${u.session!.access_token}` } },
+  });
+  const { data: gameId } = await as(anna).rpc('create_game', { p_opponent: ben.id, p_time_control: 'none', p_color: 'w' });
+  await as(ben).rpc('respond_game', { p_game: gameId, p_action: 'accept' });
+  return { anna, ben, gameId: gameId as string, as };
+}
+
+const videoWidth = (p: Page) => p.getByTestId('remote-video').evaluate((v) => (v as HTMLVideoElement).videoWidth).catch(() => 0);
+
+test('video call between the two players with fake cameras', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const { anna, ben, gameId } = await friendsWithGame();
+  const a = await signedInPage(browser, anna.session);
+  const b = await signedInPage(browser, ben.session);
+  await a.goto(`/partie/${gameId}`);
+  await b.goto(`/partie/${gameId}`);
+  await expect(a.getByTestId('video-allowance')).toContainText('Gratis-Video: noch');
+
+  // Anna starts; Ben sees her without turning on his own camera.
+  await a.getByRole('button', { name: 'Video starten' }).click();
+  await expect(a.getByTestId('local-video')).toBeVisible();
+  await expect.poll(() => videoWidth(b), { timeout: 30_000 }).toBeGreaterThan(0);
+
+  // Ben turns his camera on; Anna sees him.
+  await b.getByRole('button', { name: 'Kamera einschalten' }).click();
+  await expect.poll(() => videoWidth(a), { timeout: 30_000 }).toBeGreaterThan(0);
+  await expect(a.getByTestId('quality')).toBeVisible();
+
+  // At phone width the board stays fully visible and nothing scrolls sideways.
+  await a.setViewportSize({ width: 375, height: 667 });
+  expect(await a.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+  const board = (await a.getByRole('grid', { name: 'Schachbrett' }).boundingBox())!;
+  expect(board.x).toBeGreaterThanOrEqual(0);
+  expect(board.x + board.width).toBeLessThanOrEqual(375);
+  await a.screenshot({ path: test.info().outputPath('video-mobile.png'), fullPage: true });
+  // Scrolled to the board, the opponent shows as picture-in-picture.
+  await a.evaluate(() => window.scrollTo(0, 0));
+  await expect(a.getByTestId('pip-video')).toBeVisible();
+
+  // Camera off/on keeps the call; hanging up ends it on the other side.
+  await a.getByRole('button', { name: 'Kamera aus' }).click();
+  await expect(a.getByRole('button', { name: 'Kamera an' })).toBeVisible();
+  await b.getByRole('button', { name: 'Beenden' }).click();
+  await expect(a.getByTestId('remote-video')).toHaveCount(0);
+
+  // Reload: Anna is still sending, Ben comes back and sees her again after starting.
+  await b.reload();
+  await expect.poll(() => videoWidth(b), { timeout: 30_000 }).toBeGreaterThan(0);
+});
+
+test('free video quota is enforced, Plus of one player unlocks it', async ({ browser }) => {
+  const { anna, ben, gameId, as } = await friendsWithGame();
+  const week = (await as(anna).rpc('video_status', { p_game: gameId })).data;
+  expect(week).toMatchObject({ allowed: true, unlimited: false, remaining_seconds: 600 });
+
+  const { data: ws } = await admin.rpc('video_week_start');
+  await admin.from('video_usage').upsert({ user_id: anna.id, week_start: ws, seconds: 600 });
+  const a = await signedInPage(browser, anna.session);
+  await a.goto(`/partie/${gameId}`);
+  await expect(a.getByTestId('video-allowance')).toContainText('aufgebraucht');
+  await expect(a.getByRole('button', { name: 'Video starten' })).toBeDisabled();
+  expect((await as(anna).functions.invoke('turn-credentials', { body: { gameId } })).error).toBeTruthy();
+
+  await admin.from('entitlements').update({ plan: 'plus', source: 'stripe', active_until: null }).eq('user_id', ben.id);
+  await a.reload();
+  await expect(a.getByTestId('video-allowance')).toContainText('unbegrenzt');
+  await expect(a.getByRole('button', { name: 'Video starten' })).toBeEnabled();
+  const ice = await as(anna).functions.invoke('turn-credentials', { body: { gameId } });
+  expect(ice.error).toBeNull();
+  expect(ice.data.iceServers.length).toBeGreaterThan(0);
+});
+
+test('outsiders can neither join the signalling channel nor get ICE servers', async () => {
+  const { gameId } = await friendsWithGame();
+  const carl = await makeUser('Carl');
+  const asCarl = createClient(URL, PUBLISHABLE, { auth: { persistSession: false } });
+  await asCarl.auth.setSession({ access_token: carl.session!.access_token, refresh_token: carl.session!.refresh_token });
+  await asCarl.realtime.setAuth();
+  const result = await new Promise<string>((resolve) => {
+    asCarl.channel(`video:${gameId}`, { config: { private: true } }).subscribe((s) => { if (s !== 'CLOSED') resolve(s); });
+    setTimeout(() => resolve('TIMEOUT'), 10_000);
+  });
+  expect(result).toBe('CHANNEL_ERROR');
+  expect((await asCarl.functions.invoke('turn-credentials', { body: { gameId } })).error).toBeTruthy();
 });

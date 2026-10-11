@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import type { Color, PieceSymbol, Square } from 'chess.js';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { VideoPanel } from '../video/VideoPanel';
 import { Board } from './Board';
 import { captured, fromUci, movePairs, tryMove } from './chessRules';
 import { clocksAt } from '../../../supabase/functions/_shared/gameLogic';
@@ -220,6 +221,9 @@ export function OnlineGamePage() {
       </div>
 
       <aside className="panel">
+        {myColor && game.status !== 'aborted' && (
+          <VideoPanel gameId={game.id} polite={myColor === 'b'} opponentName={name(myColor === 'w' ? 'b' : 'w')} />
+        )}
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <h2>Züge</h2>
           <span className="pill">{timeControlLabel(game.time_control)}</span>

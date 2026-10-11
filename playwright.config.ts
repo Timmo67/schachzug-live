@@ -18,7 +18,12 @@ export default defineConfig({
     { name: 'desktop', use: { ...devices['Desktop Chrome'] }, testIgnore: 'online.spec.ts' },
     { name: 'mobile', use: { ...devices['Pixel 7'] }, testIgnore: 'online.spec.ts' },
     ...(online
-      ? [{ name: 'online', testMatch: 'online.spec.ts', use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:4174' } }]
+      ? [{ name: 'online', testMatch: 'online.spec.ts', use: {
+          ...devices['Desktop Chrome'], baseURL: 'http://localhost:4174',
+          // Fake camera and microphone for the video tests; no permission prompts.
+          launchOptions: { executablePath, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
+          permissions: ['camera', 'microphone'],
+        } }]
       : []),
   ],
 });

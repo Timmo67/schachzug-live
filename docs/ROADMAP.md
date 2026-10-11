@@ -24,7 +24,7 @@ Jeder Meilenstein endet mit einer lauffähigen Version und einer kurzen deutsche
 - Partiearchiv, PGN-Export, Text-Chat
 - **Fertig wenn:** Komplette Partie mit Uhr zwischen zwei Browsern, inkl. Reload mitten in der Partie (E2E).
 
-## M3 – Videochat (ca. 100 h)
+## M3 – Videochat (ca. 100 h) – Kern erledigt 11.10.2026; offen: Cloudflare-TURN-Secrets
 - WebRTC 1:1 im Partie-Screen, Signalisierung über Realtime Broadcast (Kanal pro Partie)
 - TURN-Credentials über Edge Function `turn-credentials` (Cloudflare)
 - Kamera/Mikro an/aus, Gerätewahl, Bild-im-Bild auf Mobil, Verbindungsqualität-Anzeige
