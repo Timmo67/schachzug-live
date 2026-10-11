@@ -78,7 +78,7 @@ docs/
 - **M0 erledigt:** Vite/React/TS-Gerüst, Design-Tokens, Brett (`src/features/game/Board.tsx`), Regeln (`chessRules.ts`, Vitest), lokale Partie `/spielen`, Playwright-E2E (desktop + mobil), ESLint, CI-Workflow.
 - **M1 weitgehend erledigt:** Magic-Link-Login `/anmelden`, Profil + Gratis-Status per DB-Trigger, Freundesliste `/freunde` (Anfrage per Code, annehmen/ablehnen/entfernen), Einladungslink `/i/:code` mit 30 Tage Plus (RPC `redeem_invite`).
   Offen in M1: Apple-/Google-Login, Avatar, Geburtsjahr + Elternfreigabe, QR-Code, E2E-Test mit echtem Login (Supabase lokal per CLI).
-- **Supabase-Projekt:** `schachzug-live`, Ref `jpdlxzpzeswkgsmderwh`, Region eu-central-1 (Free-Plan). Migrationen 0001–0003 sind eingespielt.
+- **Supabase-Projekt:** `schachzug-live`, Ref `jpdlxzpzeswkgsmderwh`, Region eu-central-1 (Free-Plan). Migrationen 0001–0006 sind eingespielt.
   Freundschaften ändern Clients nur über die RPCs `request_friend`, `respond_friend`, `redeem_invite` (Policies stehen auf `false`).
 - **M2 Teil 1 erledigt:** Migration 0004 (`create_game`, `respond_game`, `game_action`; Spalten `base_ms`, `increment_ms`, `version`), Edge Function `make-move` (Logik in `supabase/functions/_shared/gameLogic.ts`, von Client und Funktion gemeinsam genutzt, Vitest), Realtime über `postgres_changes` auf `games`/`game_messages`. Seiten `/partien` (Herausforderungen, laufend, Archiv, PGN) und `/partie/:id` (Uhren, Aufgeben, Remis, Chat). Herausfordern aus `/freunde`.
   Clients schreiben `games` nie direkt (Insert-Policy `false`). Uhren laufen erst nach dem ersten Zug beider Seiten; Zeitüberschreitung meldet der Client per `game_action('claim_timeout')`, der Server prüft.
@@ -86,7 +86,10 @@ docs/
 - **M2 erledigt (Teil 2):** Drag & Drop im Brett (Tippen geht weiter), E2E `e2e/online.spec.ts`: komplette Partie zwischen zwei Browsern inkl. Reload, Chat und Server-Ablehnung falscher Züge, gegen lokales Supabase (`supabase/config.toml`, `.env.e2e`, CI-Job `e2e-online`).
   Lokal: `npx supabase start -x imgproxy,postgres-meta,supavisor,vector,logflare,mailpit,studio`, dann `E2E_ONLINE=1 npx playwright test --project=online`.
   Realtime: nach dem `system`-Event „postgres_changes ok“ wird neu geladen (sonst gehen Änderungen direkt nach dem Verbinden verloren), zusätzlich alle 20 s.
-- Nächster Schritt: **M3 Videochat**.
+- **M3 Videochat (Kern) erledigt:** Migration 0005/0006 (`video_status`, `video_heartbeat`: 10 Gratis-Min./Woche pro Nutzer, unbegrenzt wenn ein Spieler Plus+; privater Broadcast-Kanal `video:<game id>` nur für die zwei Spieler per RLS auf `realtime.messages`), Edge Function `turn-credentials` (ICE-Server nur mit Video-Erlaubnis; Cloudflare TURN sobald Secrets `CLOUDFLARE_TURN_KEY_ID`/`CLOUDFLARE_TURN_API_TOKEN` gesetzt, sonst STUN). Client `src/features/video/` (Perfect Negotiation, Kamera/Mikro, Geräte, Qualität, Bild-im-Bild auf Mobil). E2E mit Fake-Kamera in `e2e/online.spec.ts`.
+  Offen in M3: Cloudflare-TURN-Secrets (Auftraggeber legt Konto an).
+  Hinweis: Das Kontingent ist serverseitig gezählt; da Media P2P läuft, kann ein manipulierter Client nach Ablauf weiter senden – TURN-Zugang ist aber gesperrt.
+- Nächster Schritt: Cloudflare-TURN einrichten, dann M4 Abos.
 
 ## Befehle
 ```
