@@ -73,7 +73,7 @@ export function useGameNotifications(me: string | undefined) {
     if (soundEnabled()) chime();
     if (document.visibilityState === 'hidden' && notificationsSupported() && Notification.permission === 'granted') {
       try {
-        const n = new Notification('Schachzug Live', { body: title, tag: e.gameId });
+        const n = new Notification('Knightcall', { body: title, tag: e.gameId });
         n.onclick = () => { window.focus(); window.location.assign(`/partie/${e.gameId}`); };
       } catch { /* some browsers only allow notifications from a service worker */ }
     }
@@ -115,9 +115,9 @@ export function useGameNotifications(me: string | undefined) {
     return () => { void client.removeChannel(ch); };
   }, [me, raise, recount]);
 
-  // Unread count in the tab title, e.g. "(2) Schachzug Live".
+  // Unread count in the tab title, e.g. "(2) Knightcall".
   useEffect(() => {
-    document.title = badge > 0 ? `(${badge}) Schachzug Live` : 'Schachzug Live';
+    document.title = badge > 0 ? `(${badge}) Knightcall` : 'Knightcall';
   }, [badge]);
 
   return { notices, dismiss, badge };

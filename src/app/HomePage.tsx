@@ -3,6 +3,7 @@ import { useAuth } from '../features/auth/AuthProvider';
 
 export function HomePage() {
   const { session, profile, entitlement, signOut } = useAuth();
+  const beta = entitlement?.source === 'beta';
   const trialEnd = entitlement?.source === 'referral_trial' && entitlement.active_until && entitlement.plan !== 'free'
     ? new Date(entitlement.active_until).toLocaleDateString('de-DE') : null;
 
@@ -12,7 +13,8 @@ export function HomePage() {
         <h1>{session ? `Hallo ${profile?.display_name ?? ''}` : 'Schach mit Freunden, von Angesicht zu Angesicht'}</h1>
         <p>{session
           ? 'Fordere Freunde zu einer Online-Partie heraus und sieh sie dabei im Video neben dem Brett.'
-          : 'Spiele gegen Freunde und sieh sie dabei im Video. Spielen ist gratis, dazu 10 Minuten Video pro Woche – unbegrenzt mit Plus.'}</p>
+          : 'Spiele gegen Freunde und sieh sie dabei im Video. Knightcall ist gerade in der kostenlosen, geschlossenen Beta – du brauchst die Einladung eines Freundes.'}</p>
+        {beta && <p className="success">Du bist Beta-Tester: Alles ist kostenlos, auch Video und alle Designs. Danke fürs Mitmachen – zum Start bekommst du 6 Monate Plus geschenkt.</p>}
         {trialEnd && <p className="success">Deine Plus-Testphase läuft bis {trialEnd}. Danach geht es automatisch mit Basis weiter, ohne Kosten.</p>}
         <div className="row">
           <Link className="btn primary" to="/spielen">Auf einem Gerät spielen</Link>

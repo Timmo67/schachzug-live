@@ -74,9 +74,9 @@ export function FriendsPage() {
   async function share() {
     if (!profile) return;
     const url = inviteUrl(profile.invite_code);
-    const text = 'Lass uns Schach spielen – mit Video! Über meinen Link bekommst du 30 Tage Plus gratis.';
+    const text = 'Lass uns Schach spielen – mit Video! Mit meinem Link kommst du in die kostenlose Beta von Knightcall.';
     try {
-      if (navigator.share) { await navigator.share({ title: 'Schachzug Live', text, url }); return; }
+      if (navigator.share) { await navigator.share({ title: 'Knightcall', text, url }); return; }
       await navigator.clipboard.writeText(url);
       setMsg({ ok: true, text: 'Link kopiert.' });
     } catch { /* user cancelled */ }
@@ -88,7 +88,7 @@ export function FriendsPage() {
         <h1>Freunde</h1>
         <span className="lbl">Dein Einladungslink</span>
         <p className="mono" style={{ overflowWrap: 'anywhere' }} data-testid="invite-url">{profile ? inviteUrl(profile.invite_code) : '…'}</p>
-        <p className="note">Wer sich über deinen Link anmeldet, ist sofort mit dir befreundet und bekommt 30 Tage Plus gratis.</p>
+        <p className="note">Wer sich über deinen Link oder Code anmeldet, kommt in die geschlossene Beta und ist sofort mit dir befreundet. Dein Code: <b className="mono">{profile?.invite_code}</b></p>
         <div className="row">
           <button className="primary" type="button" onClick={share}>Link teilen</button>
           <button type="button" aria-expanded={showQr} onClick={() => setShowQr(!showQr)}>{showQr ? 'QR-Code ausblenden' : 'QR-Code zeigen'}</button>

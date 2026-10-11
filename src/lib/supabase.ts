@@ -17,6 +17,10 @@ export function errorText(e: unknown): string {
     invite_not_found: 'Dieser Einladungscode existiert nicht.',
     own_invite: 'Das ist dein eigener Code.',
     design_requires_plus: 'Dieses Design gibt es mit Plus.',
+    beta_invite_required: 'Dieser Einladungscode existiert nicht.',
+    beta_terms_required: 'Bitte bestätige Alter und Nutzungsbedingungen.',
+    'Signups not allowed': 'Zu dieser E-Mail gibt es noch kein Konto. Für die geschlossene Beta brauchst du einen Einladungscode.',
+    'Database error saving new user': 'Anmeldung nicht möglich. Bitte prüfe den Einladungscode.',
     not_authenticated: 'Bitte zuerst anmelden.',
   };
   for (const k of Object.keys(map)) if (msg.includes(k)) return map[k];

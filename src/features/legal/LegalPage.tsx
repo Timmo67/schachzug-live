@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 // DRAFTS ONLY. These pages show the structure the final texts need; the wording itself must come from
 // the client (eRecht24 or a lawyer). Never fill in legal text here without the client's approval.
 
-export type LegalSlug = 'impressum' | 'datenschutz' | 'agb' | 'widerruf';
+export type LegalSlug = 'impressum' | 'datenschutz' | 'agb' | 'widerruf' | 'nutzungsbedingungen';
 
 function Placeholder({ children }: { children: ReactNode }) {
   return <span className="placeholder">[{children}]</span>;
@@ -44,10 +44,27 @@ const PAGES: Record<LegalSlug, { title: string; body: ReactNode }> = {
           <li>Datenbank, Anmeldung, Echtzeit-Daten, Profilbilder: Supabase (Region EU, Frankfurt)</li>
           <li>Videochat: direkte Verbindung zwischen den Geräten (WebRTC); bei Bedarf Weiterleitung über Cloudflare Realtime TURN. Video und Ton werden nicht gespeichert.</li>
           <li>Anmelde-E-Mails: Resend (geplant)</li>
+          <li>Bei der Anmeldung gespeichert: Bestätigung „mindestens 18 Jahre“ und Zustimmung zu den Nutzungsbedingungen (jeweils mit Zeitpunkt), Einladungscode.</li>
           <li>Zahlungen: Stripe (geplant, Meilenstein 4)</li>
           <li>Schriften werden von unserer eigenen Domain geladen, nicht von Google.</li>
           <li>Gespeicherte Daten: E-Mail, Anzeigename, Profilbild (freiwillig), Freundschaften, Partien und Chat-Nachrichten, Video-Nutzungszeit (Gratis-Kontingent), Abo-Status, Design-Auswahl.</li>
           <li>Im Browser gespeichert: Anmeldung (Supabase), Einstellung „Ton bei Benachrichtigungen“, offene Einladung vor dem Login.</li>
+        </ul>
+      </>
+    ),
+  },
+  nutzungsbedingungen: {
+    title: 'Nutzungsbedingungen der Beta',
+    body: (
+      <>
+        <p><Placeholder>Nutzungsbedingungen für die kostenlose Beta – Text von eRecht24 bzw. Anwalt</Placeholder></p>
+        <h2>Für den Text: Eckpunkte der Beta</h2>
+        <ul className="note">
+          <li>Kostenlose Testphase, ohne Anspruch auf Verfügbarkeit; kann jederzeit geändert oder beendet werden.</li>
+          <li>Teilnahme nur mit Einladung und ab 18 Jahren.</li>
+          <li>Videochat nur zwischen den zwei Spielern einer Partie, die befreundet sind; Video wird nicht gespeichert.</li>
+          <li>Verhaltensregeln (kein Missbrauch, keine Belästigung), Sperrung bei Verstößen.</li>
+          <li>Beta-Tester erhalten zum Start der Bezahlversion 6 Monate Plus kostenlos (Bedingungen folgen).</li>
         </ul>
       </>
     ),
@@ -82,6 +99,7 @@ export function LegalFooter() {
       <Link to="/datenschutz">Datenschutz</Link>
       <Link to="/agb">AGB</Link>
       <Link to="/widerruf">Widerruf</Link>
+      <Link to="/nutzungsbedingungen">Nutzungsbedingungen</Link>
     </footer>
   );
 }

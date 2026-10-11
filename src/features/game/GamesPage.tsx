@@ -109,7 +109,7 @@ export function GamesPage() {
         {permission === 'default' && (
           <div className="row">
             <button type="button" onClick={() => void Notification.requestPermission().then(setPermission)}>Benachrichtigungen erlauben</button>
-            <span className="note">Dann meldet sich dein Browser auch, wenn Schachzug Live im Hintergrund offen ist.</span>
+            <span className="note">Dann meldet sich dein Browser auch, wenn Knightcall im Hintergrund offen ist.</span>
           </div>
         )}
       </div>
