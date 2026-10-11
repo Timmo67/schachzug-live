@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Color, PieceSymbol, Square } from 'chess.js';
 import { Board } from './Board';
 import { captured, fromUci, movePairs, result, statusText, tryMove } from './chessRules';
@@ -64,7 +65,7 @@ export function LocalGamePage() {
             <span key={n} style={{ display: 'contents' }}><span className="n">{n}.</span><span>{a}</span><span>{b}</span></span>
           ))}
         </div>
-        <p className="note">Auf einem Gerät abwechselnd ziehen. Online gegen Freunde mit Video folgt in den nächsten Ausbaustufen.</p>
+        <p className="note">Auf einem Gerät abwechselnd ziehen. Online gegen Freunde mit Video: unter <Link to="/partien">Partien</Link>.</p>
       </aside>
     </div>
   );

@@ -1,5 +1,7 @@
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Chess, Color, PieceSymbol, Square } from 'chess.js';
+import { useDesign } from '../appearance/useDesign';
+import { pieceUrl } from '../appearance/designs';
 import { FILES, GLYPH, VS15, kingInCheckSquare, needsPromotion } from './chessRules';
 import './board.css';
 
@@ -21,6 +23,12 @@ const DRAG_START_PX = 6;
 
 type Drag = { from: Square; x0: number; y0: number; x: number; y: number; active: boolean; size: number };
 
+/** One piece in the chosen set: an SVG image, or the Unicode glyph for the "Schlicht" set. */
+function Piece({ set, color, type, extra = '', style }: { set: string; color: Color; type: PieceSymbol; extra?: string; style?: CSSProperties }) {
+  if (set === 'symbols') return <span className={`pc ${color} ${extra}`} style={style}>{GLYPH[type] + VS15}</span>;
+  return <img className={`pc img ${extra}`} src={pieceUrl(set, color, type)} alt="" draggable={false} style={style} />;
+}
+
 function squareAt(x: number, y: number): Square | null {
   const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-square]');
   return (el?.dataset.square as Square | undefined) ?? null;
@@ -31,6 +39,11 @@ export function Board({ game, orientation, interactive, lastMove, onMove, onBloc
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const suppressClick = useRef(false);
+  const design = useDesign();
+  const set = design.pieces.id;
+  const boardStyle = design.board.light
+    ? ({ '--sq-l': design.board.light, '--sq-d': design.board.dark } as CSSProperties)
+    : undefined;
   const fen = game.fen();
 
   const targets = useMemo(
@@ -112,7 +125,7 @@ export function Board({ game, orientation, interactive, lastMove, onMove, onBloc
           onPointerUp={pointerUp}
           onPointerCancel={() => setDrag(null)}
         >
-          {p && <span className={`pc ${p.color}${drag?.active && drag.from === sq ? ' lifted' : ''}`}>{GLYPH[p.type] + VS15}</span>}
+          {p && <Piece set={set} color={p.color} type={p.type} extra={drag?.active && drag.from === sq ? 'lifted' : ''} />}
           {isTarget && <span className={p ? 'ring' : 'dot'} />}
           {row === 7 && <span className="cf">{FILES[fi]}</span>}
           {col === 0 && <span className="cr">{ri + 1}</span>}
@@ -123,12 +136,13 @@ export function Board({ game, orientation, interactive, lastMove, onMove, onBloc
 
   return (
     <div className="boardbox">
-      <div className={`board${interactive ? ' live' : ''}`} role="grid" aria-label="Schachbrett">{squares}</div>
+      <div className={`board${interactive ? ' live' : ''}`} role="grid" aria-label="Schachbrett" style={boardStyle}
+        data-design={`${design.board.id}/${set}`}>{squares}</div>
       {drag?.active && (() => {
         const p = game.get(drag.from);
         return p && (
-          <span className={`pc ${p.color} ghost`} aria-hidden="true"
-            style={{ left: drag.x, top: drag.y, fontSize: drag.size * 0.82 }}>{GLYPH[p.type] + VS15}</span>
+          <Piece set={set} color={p.color} type={p.type} extra="ghost"
+            style={{ left: drag.x, top: drag.y, fontSize: drag.size * 0.82, width: drag.size * 0.95, height: drag.size * 0.95 }} />
         );
       })()}
       {promo && (
@@ -141,7 +155,7 @@ export function Board({ game, orientation, interactive, lastMove, onMove, onBloc
                 aria-label={PROMO_NAME[t]}
                 onClick={() => { onMove(promo.from, promo.to, t); setPromo(null); setSel(null); }}
               >
-                <span className={`pc ${game.turn()}`}>{GLYPH[t] + VS15}</span>
+                <Piece set={set} color={game.turn()} type={t} />
               </button>
             ))}
           </div>

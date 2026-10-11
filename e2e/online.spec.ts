@@ -242,3 +242,29 @@ test('notifications: challenge, badge and opponent move reach the other player a
   await expect(b.getByTestId('notice')).toContainText('Anna hat gezogen');
   await expect(b.getByTestId('badge')).toHaveText('1');
 });
+
+test('designs: free designs save, Plus designs need Plus (also enforced by the database)', async ({ browser }) => {
+  const anna = await makeUser('Anna');
+  const asAnna = createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${anna.session!.access_token}` } } });
+  const a = await signedInPage(browser, anna.session);
+  await a.goto('/design');
+  await a.getByRole('radio', { name: /Holz/ }).click();
+  await a.getByRole('radio', { name: /Keltisch/ }).click();
+  await expect(a.getByRole('status')).toHaveText('Gespeichert.');
+  await a.getByRole('radio', { name: /Turnier/ }).click();
+  await expect(a.getByRole('status')).toContainText('gibt es mit Plus');
+
+  await a.goto('/spielen');
+  await expect(a.getByRole('grid', { name: 'Schachbrett' })).toHaveAttribute('data-design', 'wood/celtic');
+  await expect(a.locator('[data-square="e1"] img')).toHaveAttribute('src', '/pieces/celtic/wK.svg');
+  expect(await a.locator('[data-square="e1"] img').evaluate((i) => (i as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+
+  // Going around the UI does not help without Plus …
+  const denied = await asAnna.from('profiles').update({ board_theme: 'green' }).eq('id', anna.id);
+  expect(denied.error?.message).toContain('design_requires_plus');
+  // … but with Plus it works.
+  await admin.from('entitlements').update({ plan: 'plus', source: 'stripe', active_until: null }).eq('user_id', anna.id);
+  expect((await asAnna.from('profiles').update({ board_theme: 'green', piece_set: 'fantasy' }).eq('id', anna.id)).error).toBeNull();
+  await a.reload();
+  await expect(a.getByRole('grid', { name: 'Schachbrett' })).toHaveAttribute('data-design', 'green/fantasy');
+});
