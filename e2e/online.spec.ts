@@ -268,3 +268,31 @@ test('designs: free designs save, Plus designs need Plus (also enforced by the d
   await a.reload();
   await expect(a.getByRole('grid', { name: 'Schachbrett' })).toHaveAttribute('data-design', 'green/fantasy');
 });
+
+test('profile: picture upload, name change and invite QR code', async ({ browser }) => {
+  const anna = await makeUser('Anna');
+  const a = await signedInPage(browser, anna.session);
+  await a.goto('/profil');
+  // A small generated PNG as upload.
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await a.getByLabel('Profilbild').setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: png });
+  await expect(a.getByRole('status')).toHaveText('Profilbild gespeichert.');
+  const src = await a.locator('.profilehead img.avatar').getAttribute('src');
+  expect(src).toContain(`/storage/v1/object/public/avatars/${anna.id}/avatar.webp`);
+  expect(await a.locator('.profilehead img.avatar').evaluate((i) => (i as HTMLImageElement).naturalWidth)).toBe(256);
+
+  await a.getByLabel('Anzeigename').fill('Anna B.');
+  await a.getByRole('button', { name: 'Name speichern' }).click();
+  await expect(a.getByRole('status')).toHaveText('Name gespeichert.');
+
+  // Nobody can point their avatar at someone else's file.
+  const asAnna = createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${anna.session!.access_token}` } } });
+  const bad = await asAnna.from('profiles').update({ avatar_url: `${URL}/storage/v1/object/public/avatars/00000000-0000-0000-0000-000000000000/avatar.webp` }).eq('id', anna.id);
+  expect(bad.error).toBeTruthy();
+  const foreign = await asAnna.storage.from('avatars').upload('00000000-0000-0000-0000-000000000000/x.webp', new Blob(['x'], { type: 'image/webp' }));
+  expect(foreign.error).toBeTruthy();
+
+  await a.goto('/freunde');
+  await a.getByRole('button', { name: 'QR-Code zeigen' }).click();
+  await expect(a.getByTestId('invite-qr').locator('svg')).toBeVisible();
+});

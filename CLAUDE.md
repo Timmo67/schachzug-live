@@ -78,7 +78,7 @@ docs/
 - **M0 erledigt:** Vite/React/TS-Gerüst, Design-Tokens, Brett (`src/features/game/Board.tsx`), Regeln (`chessRules.ts`, Vitest), lokale Partie `/spielen`, Playwright-E2E (desktop + mobil), ESLint, CI-Workflow.
 - **M1 weitgehend erledigt:** Magic-Link-Login `/anmelden`, Profil + Gratis-Status per DB-Trigger, Freundesliste `/freunde` (Anfrage per Code, annehmen/ablehnen/entfernen), Einladungslink `/i/:code` mit 30 Tage Plus (RPC `redeem_invite`).
   Offen in M1: Apple-/Google-Login, Avatar, Geburtsjahr + Elternfreigabe, QR-Code, E2E-Test mit echtem Login (Supabase lokal per CLI).
-- **Supabase-Projekt:** `schachzug-live`, Ref `jpdlxzpzeswkgsmderwh`, Region eu-central-1 (Free-Plan). Migrationen 0001–0007 sind eingespielt.
+- **Supabase-Projekt:** `schachzug-live`, Ref `jpdlxzpzeswkgsmderwh`, Region eu-central-1 (Free-Plan). Migrationen 0001–0008 sind eingespielt.
   Freundschaften ändern Clients nur über die RPCs `request_friend`, `respond_friend`, `redeem_invite` (Policies stehen auf `false`).
 - **M2 Teil 1 erledigt:** Migration 0004 (`create_game`, `respond_game`, `game_action`; Spalten `base_ms`, `increment_ms`, `version`), Edge Function `make-move` (Logik in `supabase/functions/_shared/gameLogic.ts`, von Client und Funktion gemeinsam genutzt, Vitest), Realtime über `postgres_changes` auf `games`/`game_messages`. Seiten `/partien` (Herausforderungen, laufend, Archiv, PGN) und `/partie/:id` (Uhren, Aufgeben, Remis, Chat). Herausfordern aus `/freunde`.
   Clients schreiben `games` nie direkt (Insert-Policy `false`). Uhren laufen erst nach dem ersten Zug beider Seiten; Zeitüberschreitung meldet der Client per `game_action('claim_timeout')`, der Server prüft.
@@ -92,7 +92,10 @@ docs/
 - **Hosting:** Cloudflare Pages (`schachzug-live.pages.dev`), baut automatisch aus `main`; Vorschau pro PR. Supabase Auth: Site URL + Redirect `https://schachzug-live.pages.dev/**`. Cloudflare-TURN-Secrets sind gesetzt.
 - **Benachrichtigungen:** `src/features/notify/` – In-App-Hinweise mit Ton, Zähler an „Partien“ und im Tab-Titel, Browser-Notification bei Hintergrund-Tab (Erlaubnis auf `/partien`). Echte Push-Nachrichten folgen mit den Apps (M5).
 - **Designs:** `/design`, Spalten `profiles.board_theme`/`piece_set` (Migration 0007, Trigger erzwingt Plus für Plus-Designs). Katalog in `src/features/appearance/designs.ts` (Test prüft Gleichstand mit SQL). Figuren-SVGs in `public/pieces/` nur mit kommerziell nutzbarer Lizenz (siehe `public/pieces/CREDITS.md`); GPL-/NC-Sätze von lichess NICHT verwenden.
-- Nächster Schritt: M4 Abos.
+- **Profil:** `/profil` (Name, Profilbild in Storage-Bucket `avatars` – Migration 0008, nur eigener Ordner `<uid>/`; Ton an/aus, Standard aus). QR-Code des Einladungslinks auf `/freunde` (Bibliothek `uqr`).
+- **Rechtliches:** Entwürfe `/impressum`, `/datenschutz`, `/agb`, `/widerruf` mit Platzhaltern (`src/features/legal/LegalPage.tsx`), Footer auf jeder Seite. Endgültige Texte liefert der Auftraggeber (eRecht24). Schriften selbst gehostet (`public/fonts`, kein Google-Fonts-Aufruf).
+- **E-Mail:** Supabase-Standard-SMTP sendet nur an Team-Mitglieder → Resend als eigenes SMTP nötig, bevor Fremde sich anmelden.
+- Nächster Schritt: M4 Abos (Stripe-Konto, Firma für Impressum/Stripe offen).
 
 ## Befehle
 ```

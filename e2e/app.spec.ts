@@ -68,3 +68,18 @@ test('online game pages send signed-out visitors to the login', async ({ page })
     await expect(page.getByRole('heading', { name: 'Anmelden' })).toBeVisible();
   }
 });
+
+test('legal pages are linked from every page and fonts come from our own domain', async ({ page }) => {
+  const external: string[] = [];
+  page.on('request', (r) => { if (/fonts\.(googleapis|gstatic)\.com/.test(r.url())) external.push(r.url()); });
+  await page.goto('/spielen');
+  await page.getByRole('link', { name: 'Impressum' }).click();
+  await expect(page.getByRole('heading', { name: 'Impressum' })).toBeVisible();
+  await expect(page.getByText('Entwurf – der endgültige Text folgt.')).toBeVisible();
+  for (const [link, heading] of [['Datenschutz', 'Datenschutzerklärung'], ['AGB', 'Allgemeine Geschäftsbedingungen'], ['Widerruf', 'Widerrufsbelehrung']]) {
+    await page.getByRole('link', { name: link, exact: true }).click();
+    await expect(page.getByRole('heading', { name: heading })).toBeVisible();
+  }
+  expect(await page.evaluate(() => document.fonts.check('600 16px "Bricolage Grotesque"'))).toBe(true);
+  expect(external).toEqual([]);
+});

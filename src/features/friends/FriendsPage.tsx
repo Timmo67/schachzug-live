@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { errorText, supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { renderSVG } from 'uqr';
+import { Avatar } from '../profile/Avatar';
 import { TIME_CONTROLS, createGame, gameErrorText } from '../game/onlineGame';
 
 type Row = { requester_id: string; addressee_id: string; status: 'pending' | 'accepted' | 'blocked' };
-type Person = { id: string; display_name: string };
+type Person = { id: string; display_name: string; avatar_url: string | null };
 
 export function inviteUrl(code: string) {
   return `${window.location.origin}/i/${code}`;
@@ -15,6 +17,8 @@ export function FriendsPage() {
   const { session, profile, ready } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [avatars, setAvatars] = useState<Record<string, string | null>>({});
+  const [showQr, setShowQr] = useState(false);
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const me = session?.user.id;
@@ -30,8 +34,9 @@ export function FriendsPage() {
     setRows(list);
     const ids = [...new Set(list.map((r) => (r.requester_id === me ? r.addressee_id : r.requester_id)))];
     if (ids.length) {
-      const { data: ps } = await supabase.from('profiles').select('id, display_name').in('id', ids);
+      const { data: ps } = await supabase.from('profiles').select('id, display_name, avatar_url').in('id', ids);
       setNames(Object.fromEntries(((ps ?? []) as Person[]).map((p) => [p.id, p.display_name])));
+      setAvatars(Object.fromEntries(((ps ?? []) as Person[]).map((p) => [p.id, p.avatar_url])));
     }
   }, [me]);
 
@@ -84,7 +89,15 @@ export function FriendsPage() {
         <span className="lbl">Dein Einladungslink</span>
         <p className="mono" style={{ overflowWrap: 'anywhere' }} data-testid="invite-url">{profile ? inviteUrl(profile.invite_code) : '…'}</p>
         <p className="note">Wer sich über deinen Link anmeldet, ist sofort mit dir befreundet und bekommt 30 Tage Plus gratis.</p>
-        <div className="row"><button className="primary" type="button" onClick={share}>Link teilen</button></div>
+        <div className="row">
+          <button className="primary" type="button" onClick={share}>Link teilen</button>
+          <button type="button" aria-expanded={showQr} onClick={() => setShowQr(!showQr)}>{showQr ? 'QR-Code ausblenden' : 'QR-Code zeigen'}</button>
+        </div>
+        {showQr && profile && (
+          // Scannable with any phone camera; the SVG is generated locally from our own invite URL.
+          <div className="qr" data-testid="invite-qr" role="img" aria-label="QR-Code mit deinem Einladungslink"
+            dangerouslySetInnerHTML={{ __html: renderSVG(inviteUrl(profile.invite_code), { border: 1 }) }} />
+        )}
         <span className="lbl">Freund per Code hinzufügen</span>
         <form className="row" onSubmit={add}>
           <input aria-label="Einladungscode" className="mono" maxLength={8} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="CODE" style={{ width: '9em', letterSpacing: '.12em' }} />
@@ -115,7 +128,7 @@ export function FriendsPage() {
           {friends.length === 0 && <p className="note">Noch niemand. Teile deinen Link, um den ersten Freund einzuladen.</p>}
           {friends.map((r) => (
             <div className="item" key={other(r)}>
-              <b>{names[other(r)] ?? 'Spieler'}</b>
+              <span className="row"><Avatar url={avatars[other(r)]} name={names[other(r)] ?? 'Spieler'} /><b>{names[other(r)] ?? 'Spieler'}</b></span>
               <div className="row">
                 <button type="button" className={challenge === other(r) ? '' : 'primary'}
                   onClick={() => setChallenge(challenge === other(r) ? null : other(r))}>Herausfordern</button>

@@ -72,3 +72,9 @@ button.chip { padding: 6px 10px; font-size: .88rem; }
 button.chip.on { border-color: var(--accent); color: var(--accent); }
 a.item { color: inherit; text-decoration: none; }
 a.item:hover { border-color: var(--accent); }
+.legal h2 { font-size: 1.1rem; margin-top: 8px; }
+.legal p, .legal ul { margin: 0; }
+.legal .placeholder { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); border-radius: 4px; padding: 0 4px; font-weight: 600; }
+.legal .draft { color: var(--warn); font-weight: 700; margin: 0; }
+.legalfooter { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; padding: 24px 0 calc(16px + env(safe-area-inset-bottom, 0px)); font-size: .85rem; }
+.legalfooter a { color: var(--muted); }

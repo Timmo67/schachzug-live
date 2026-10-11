@@ -8,7 +8,7 @@ export const supabase: SupabaseClient | null = url && key ? createClient(url, ke
 
 export type Plan = 'free' | 'plus' | 'pro' | 'family' | 'club';
 
-export type Profile = { id: string; display_name: string; invite_code: string; board_theme?: string; piece_set?: string };
+export type Profile = { id: string; display_name: string; invite_code: string; avatar_url?: string | null; board_theme?: string; piece_set?: string };
 export type Entitlement = { plan: Plan; source: string; active_until: string | null };
 
 export function errorText(e: unknown): string {
