@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase || !s) { setProfile(null); setEntitlement(null); return; }
     const uid = s.user.id;
     const [p, e] = await Promise.all([
-      supabase.from('profiles').select('id, display_name, invite_code, board_theme, piece_set').eq('id', uid).maybeSingle(),
+      supabase.from('profiles').select('id, display_name, invite_code, avatar_url, board_theme, piece_set').eq('id', uid).maybeSingle(),
       supabase.from('entitlements').select('plan, source, active_until').eq('user_id', uid).maybeSingle(),
     ]);
     setProfile((p.data as Profile) ?? null);

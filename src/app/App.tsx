@@ -10,9 +10,12 @@ import { OnlineGamePage } from '../features/game/OnlineGamePage';
 import { NotificationStack } from '../features/notify/NotificationStack';
 import { useGameNotifications } from '../features/notify/useGameNotifications';
 import { DesignPage } from '../features/appearance/DesignPage';
+import { ProfilePage } from '../features/profile/ProfilePage';
+import { LegalFooter, LegalPage } from '../features/legal/LegalPage';
 import { HomePage } from './HomePage';
 
 const PLAN_LABEL: Record<string, string> = { free: 'Basis', plus: 'Plus', pro: 'Pro', family: 'Familie', club: 'Verein' };
+const planLabel = (plan: string | undefined, source: string | undefined) => (source === 'beta' ? 'Beta' : PLAN_LABEL[plan ?? 'free']);
 
 export function App() {
   const { session, entitlement, refresh } = useAuth();
@@ -40,15 +43,15 @@ export function App() {
   return (
     <div className="wrap">
       <header className="topbar">
-        <Link to="/" className="brand">Schachzug <span>Live</span></Link>
+        <Link to="/" className="brand">Knight<span>call</span></Link>
         <nav className="nav">
           <NavLink to="/spielen">Spielen</NavLink>
           {session && <NavLink to="/partien">Partien{badge > 0 && <span className="badge" data-testid="badge">{badge}</span>}</NavLink>}
           {session && <NavLink to="/freunde">Freunde</NavLink>}
-          <NavLink to="/design">Design</NavLink>
+          {session ? <NavLink to="/profil">Profil</NavLink> : <NavLink to="/design">Design</NavLink>}
           {session ? (
             <span className={`pill ${entitlement?.plan && entitlement.plan !== 'free' ? 'accent' : ''}`} data-testid="plan">
-              {PLAN_LABEL[entitlement?.plan ?? 'free']}
+              {planLabel(entitlement?.plan, entitlement?.source)}
             </span>
           ) : (
             <NavLink to="/anmelden">Anmelden</NavLink>
@@ -63,11 +66,18 @@ export function App() {
           <Route path="/freunde" element={<FriendsPage />} />
           <Route path="/partien" element={<GamesPage />} />
           <Route path="/design" element={<DesignPage />} />
+          <Route path="/profil" element={<ProfilePage />} />
+          <Route path="/impressum" element={<LegalPage slug="impressum" />} />
+          <Route path="/datenschutz" element={<LegalPage slug="datenschutz" />} />
+          <Route path="/agb" element={<LegalPage slug="agb" />} />
+          <Route path="/widerruf" element={<LegalPage slug="widerruf" />} />
+          <Route path="/nutzungsbedingungen" element={<LegalPage slug="nutzungsbedingungen" />} />
           <Route path="/partie/:id" element={<OnlineGamePage />} />
           <Route path="/i/:code" element={<InvitePage />} />
           <Route path="*" element={<div className="panel"><h2>Seite nicht gefunden</h2><Link to="/">Zur Startseite</Link></div>} />
         </Routes>
       </main>
+      <LegalFooter />
       {toast && <div className="toast" role="status">{toast}</div>}
       <NotificationStack notices={notices} dismiss={dismiss} />
     </div>

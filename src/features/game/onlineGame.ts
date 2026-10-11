@@ -122,7 +122,7 @@ export function toPgn(g: GameRow, white: string, black: string): string {
   if (!chess) return '';
   const date = new Date(g.created_at);
   const d = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
-  chess.setHeader('Event', 'Schachzug Live');
+  chess.setHeader('Event', 'Knightcall');
   chess.setHeader('Site', 'schachzug-live');
   chess.setHeader('Date', d);
   chess.setHeader('White', white);

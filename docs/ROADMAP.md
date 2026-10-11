@@ -49,5 +49,13 @@ Jeder Meilenstein endet mit einer lauffähigen Version und einer kurzen deutsche
 - **Fertig wenn:** TestFlight- und Play-Internal-Test-Build laufen; geschlossene Beta mit 20–50 Personen.
 - **Auftraggeber muss:** Apple Developer Program (99 €/Jahr) und Google Play Console (25 $) beantragen.
 
+## Ideen des Auftraggebers (11.10.2026, nach erstem Test)
+- **Partieanalyse** (Plus): Engine-Bewertung jeder Partie, Fehler/Patzer markieren.
+- **Persönliches Training** (Plus): nach ca. 10 Partien Spielstärke schätzen und passende Lektionen vorschlagen.
+- **Rätsel** (Plus): Taktikaufgaben passend zur Spielstärke.
+- **Zufallsgegner** (auch gratis): Partie gegen Fremde, **ohne Video** (Kernregel 4, Minderjährigenschutz).
+- **Einführungsangebot** (M4): z. B. die ersten 100 Nutzer bekommen ein halbes Jahr Plus gratis.
+- Benachrichtigungen bei weiteren Tests verfeinern (Ton ist abschaltbar, Standard aus).
+
 ## Später (Ausbaustufe 2, ca. 400 h)
 Analyse + Puzzles (Stockfish WASM) · KI-Coach · private Turniere · Gruppen-Video und Zuschauer (LiveKit) · Partie-Aufzeichnung mit Video · Vereins-/Trainermodus · Familienabo.

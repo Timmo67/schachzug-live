@@ -35,7 +35,7 @@ export function InvitePage() {
       <p>Ein Freund möchte mit dir Schach spielen, mit Videochat direkt neben dem Brett.</p>
       {!session && (
         <>
-          <p className="note">Melde dich an. Danach seid ihr automatisch befreundet und du bekommst 30 Tage Plus gratis, ohne Zahlungsdaten.</p>
+          <p className="note">Knightcall ist in einer kostenlosen, geschlossenen Beta. Mit dieser Einladung kannst du dich anmelden – danach seid ihr automatisch befreundet. In der Beta ist alles frei, auch der Videochat.</p>
           <div className="row"><Link className="btn primary" to="/anmelden">Jetzt anmelden</Link></div>
         </>
       )}

@@ -12,13 +12,20 @@ const STORAGE_KEY = 'sb-127-auth-token';
 
 const admin = createClient(URL, SECRET, { auth: { persistSession: false } });
 
-async function makeUser(name: string) {
+/**
+ * Test account created through the admin API (skips the closed-beta invite check). By default it is
+ * set back to the free plan so the Plus/free rules can be tested; pass beta=true to keep beta Plus.
+ */
+async function makeUser(name: string, beta = false) {
   const email = `${name.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.test`;
   const password = 'test-password-123';
+  const token = `t-${Math.random().toString(36).slice(2)}${Date.now()}`;
+  await admin.from('beta_admin_tokens').insert({ token });
   const { data, error } = await admin.auth.admin.createUser({
-    email, password, email_confirm: true, user_metadata: { display_name: name },
+    email, password, email_confirm: true, user_metadata: { display_name: name, beta_token: token },
   });
   if (error) throw error;
+  if (!beta) await admin.from('entitlements').update({ plan: 'free', source: 'none' }).eq('user_id', data.user.id);
   const client = createClient(URL, PUBLISHABLE, { auth: { persistSession: false } });
   const { data: s, error: e2 } = await client.auth.signInWithPassword({ email, password });
   if (e2) throw e2;
@@ -267,4 +274,80 @@ test('designs: free designs save, Plus designs need Plus (also enforced by the d
   expect((await asAnna.from('profiles').update({ board_theme: 'green', piece_set: 'fantasy' }).eq('id', anna.id)).error).toBeNull();
   await a.reload();
   await expect(a.getByRole('grid', { name: 'Schachbrett' })).toHaveAttribute('data-design', 'green/fantasy');
+});
+
+test('profile: picture upload, name change and invite QR code', async ({ browser }) => {
+  const anna = await makeUser('Anna');
+  const a = await signedInPage(browser, anna.session);
+  await a.goto('/profil');
+  // A small generated PNG as upload.
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await a.getByLabel('Profilbild').setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: png });
+  await expect(a.getByRole('status')).toHaveText('Profilbild gespeichert.');
+  const src = await a.locator('.profilehead img.avatar').getAttribute('src');
+  expect(src).toContain(`/storage/v1/object/public/avatars/${anna.id}/avatar.webp`);
+  expect(await a.locator('.profilehead img.avatar').evaluate((i) => (i as HTMLImageElement).naturalWidth)).toBe(256);
+
+  await a.getByLabel('Anzeigename').fill('Anna B.');
+  await a.getByRole('button', { name: 'Name speichern' }).click();
+  await expect(a.getByRole('status')).toHaveText('Name gespeichert.');
+
+  // Nobody can point their avatar at someone else's file.
+  const asAnna = createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${anna.session!.access_token}` } } });
+  const bad = await asAnna.from('profiles').update({ avatar_url: `${URL}/storage/v1/object/public/avatars/00000000-0000-0000-0000-000000000000/avatar.webp` }).eq('id', anna.id);
+  expect(bad.error).toBeTruthy();
+  const foreign = await asAnna.storage.from('avatars').upload('00000000-0000-0000-0000-000000000000/x.webp', new Blob(['x'], { type: 'image/webp' }));
+  expect(foreign.error).toBeTruthy();
+
+  await a.goto('/freunde');
+  await a.getByRole('button', { name: 'QR-Code zeigen' }).click();
+  await expect(a.getByTestId('invite-qr').locator('svg')).toBeVisible();
+});
+
+test('closed beta: sign-up needs an invite code, 18+ and the terms; beta accounts get Plus', async ({ browser }) => {
+  const host = await makeUser('Host', true);
+  const { data: hostProfile } = await admin.from('profiles').select('invite_code').eq('id', host.id).single();
+  const signUp = (data: Record<string, unknown>) => createClient(URL, PUBLISHABLE, { auth: { persistSession: false } }).auth.signUp({
+    email: `new-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@example.test`, password: 'test-password-123', options: { data },
+  });
+
+  expect((await signUp({ adult_confirmed: true, terms_accepted: true })).error).toBeTruthy(); // no invite
+  expect((await signUp({ invite_code: 'NOPE1234', adult_confirmed: true, terms_accepted: true })).error).toBeTruthy();
+  expect((await signUp({ invite_code: hostProfile!.invite_code, adult_confirmed: false, terms_accepted: true })).error).toBeTruthy();
+
+  const ok = await signUp({ invite_code: hostProfile!.invite_code, adult_confirmed: true, terms_accepted: true, display_name: 'Neu' });
+  expect(ok.error).toBeNull();
+  const id = ok.data.user!.id;
+  const { data: p } = await admin.from('profiles').select('beta_tester, adult_confirmed_at, terms_accepted_at').eq('id', id).single();
+  expect(p!.beta_tester).toBe(true);
+  expect(p!.adult_confirmed_at).not.toBeNull();
+  const { data: ent } = await admin.from('entitlements').select('plan, source').eq('user_id', id).single();
+  expect(ent).toEqual({ plan: 'plus', source: 'beta' });
+
+  // Users cannot flip the server-managed flags themselves.
+  const asNew = createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${ok.data.session!.access_token}` } } });
+  await asNew.from('profiles').update({ beta_tester: false, adult_confirmed_at: null }).eq('id', id);
+  const { data: p2 } = await admin.from('profiles').select('beta_tester, adult_confirmed_at').eq('id', id).single();
+  expect(p2!.beta_tester).toBe(true);
+  expect(p2!.adult_confirmed_at).not.toBeNull();
+
+  // The menu shows "Beta" and Plus designs are open.
+  const page = await signedInPage(browser, ok.data.session);
+  await page.goto('/design');
+  await expect(page.getByTestId('plan')).toHaveText('Beta');
+  await page.getByRole('radio', { name: /Turnier/ }).click();
+  await expect(page.getByRole('status')).toHaveText('Gespeichert.');
+});
+
+test('login page: without a code only existing accounts, with a code the beta checkboxes appear', async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto('/anmelden');
+  await expect(page.getByLabel('Ich bin mindestens 18 Jahre alt.')).toHaveCount(0);
+  await page.getByLabel('E-Mail').fill(`nobody-${Date.now()}@example.test`);
+  await page.getByRole('button', { name: 'Anmelde-Link schicken' }).click();
+  await expect(page.getByRole('alert')).toContainText('Einladungscode');
+  await page.getByLabel('Einladungscode (nur beim ersten Mal)').fill('ABCD1234');
+  await expect(page.getByLabel('Ich bin mindestens 18 Jahre alt.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Anmelde-Link schicken' })).toBeDisabled();
 });

@@ -1,0 +1,6 @@
+.avatar { border-radius: 50%; object-fit: cover; flex: none; display: inline-flex; align-items: center; justify-content: center; background: var(--line); color: var(--ink); font-weight: 700; font-family: var(--f-display); }
+.avatar.initial { background: color-mix(in srgb, var(--accent) 22%, var(--surface)); color: var(--accent); }
+.profilehead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.qr { width: 168px; height: 168px; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid var(--line); }
+.qr svg { width: 100%; height: 100%; display: block; }
+.check { display: flex; align-items: center; gap: 8px; }

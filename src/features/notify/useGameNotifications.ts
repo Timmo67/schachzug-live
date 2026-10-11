@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { storage, supabase } from '../../lib/supabase';
 import { badgeCount, eventFor, eventText, type GameEvent, type GameLite } from './notifyLogic';
 
 export type Notice = { id: number; gameId: string; title: string; action: string };
 
 const COLS = 'id, status, white_id, black_id, created_by, moves_uci, result';
+
+const SOUND_KEY = 'sz-notify-sound';
+/** Sound for notifications is off unless the user switched it on (per device). */
+export const soundEnabled = () => storage().get(SOUND_KEY) === '1';
+export const setSoundEnabled = (on: boolean) => (on ? storage().set(SOUND_KEY, '1') : storage().del(SOUND_KEY));
 
 /** Short two-tone chime via Web Audio (no audio file needed). Silently does nothing if blocked. */
 function chime() {
@@ -65,10 +70,10 @@ export function useGameNotifications(me: string | undefined) {
     const id = nextId.current++;
     setNotices((n) => [...n.slice(-2), { id, gameId: e.gameId, title, action }]);
     setTimeout(() => setNotices((n) => n.filter((x) => x.id !== id)), 12_000);
-    chime();
+    if (soundEnabled()) chime();
     if (document.visibilityState === 'hidden' && notificationsSupported() && Notification.permission === 'granted') {
       try {
-        const n = new Notification('Schachzug Live', { body: title, tag: e.gameId });
+        const n = new Notification('Knightcall', { body: title, tag: e.gameId });
         n.onclick = () => { window.focus(); window.location.assign(`/partie/${e.gameId}`); };
       } catch { /* some browsers only allow notifications from a service worker */ }
     }
@@ -110,9 +115,9 @@ export function useGameNotifications(me: string | undefined) {
     return () => { void client.removeChannel(ch); };
   }, [me, raise, recount]);
 
-  // Unread count in the tab title, e.g. "(2) Schachzug Live".
+  // Unread count in the tab title, e.g. "(2) Knightcall".
   useEffect(() => {
-    document.title = badge > 0 ? `(${badge}) Schachzug Live` : 'Schachzug Live';
+    document.title = badge > 0 ? `(${badge}) Knightcall` : 'Knightcall';
   }, [badge]);
 
   return { notices, dismiss, badge };

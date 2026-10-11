@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import type { Color, PieceSymbol, Square } from 'chess.js';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { Avatar } from '../profile/Avatar';
 import { VideoPanel } from '../video/VideoPanel';
 import { Board } from './Board';
 import { captured, fromUci, movePairs, tryMove } from './chessRules';
@@ -21,6 +22,7 @@ export function OnlineGamePage() {
   const [game, setGame] = useState<GameRow | null>(null);
   const [missing, setMissing] = useState(false);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [avatars, setAvatars] = useState<Record<string, string | null>>({});
   const [pending, setPending] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmResign, setConfirmResign] = useState(false);
@@ -80,8 +82,11 @@ export function OnlineGamePage() {
   const blackId = game?.black_id;
   useEffect(() => {
     if (!supabase || !whiteId || !blackId) return;
-    void supabase.from('profiles').select('id, display_name').in('id', [whiteId, blackId]).then(({ data }) =>
-      setNames(Object.fromEntries((data ?? []).map((p: { id: string; display_name: string }) => [p.id, p.display_name]))));
+    void supabase.from('profiles').select('id, display_name, avatar_url').in('id', [whiteId, blackId]).then(({ data }) => {
+      const rows = (data ?? []) as Array<{ id: string; display_name: string; avatar_url: string | null }>;
+      setNames(Object.fromEntries(rows.map((p) => [p.id, p.display_name])));
+      setAvatars(Object.fromEntries(rows.map((p) => [p.id, p.avatar_url])));
+    });
   }, [whiteId, blackId]);
 
   const ticking = game?.status === 'active' && game.base_ms !== null;
@@ -164,14 +169,14 @@ export function OnlineGamePage() {
     <div className="game">
       <div className="boardcol">
         <div className="pbar">
-          <div className="pname"><i className={`swatch ${top}`} />{name(top)}</div>
+          <div className="pname"><i className={`swatch ${top}`} /><Avatar url={avatars[(top === 'w' ? game.white_id : game.black_id) ?? '']} name={name(top)} size={24} />{name(top)}</div>
           <span className="caps">{caps[top]}</span>
           {clockOf(top)}
         </div>
         <Board game={chess} orientation={bottom} interactive={myTurn} lastMove={moves.at(-1)} onMove={onMove}
           onBlocked={() => active && setMsg(myColor ? 'Warte auf den Zug deines Gegners.' : null)} />
         <div className="pbar">
-          <div className="pname"><i className={`swatch ${bottom}`} />{name(bottom)}</div>
+          <div className="pname"><i className={`swatch ${bottom}`} /><Avatar url={avatars[(bottom === 'w' ? game.white_id : game.black_id) ?? '']} name={name(bottom)} size={24} />{name(bottom)}</div>
           <span className="caps">{caps[bottom]}</span>
           {clockOf(bottom)}
         </div>

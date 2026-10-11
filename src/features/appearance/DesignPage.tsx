@@ -40,7 +40,7 @@ export function DesignPage() {
   async function choose(patch: { board_theme?: string; piece_set?: string }, plus: boolean) {
     setMsg(null);
     if (!session || !profile || !supabase) { setMsg({ ok: false, text: 'Bitte melde dich an, um ein Design zu speichern.' }); return; }
-    if (plus && !hasPlus) { setMsg({ ok: false, text: 'Dieses Design gibt es mit Plus. Lade einen Freund ein – dann bekommst du 30 Tage Plus geschenkt.' }); return; }
+    if (plus && !hasPlus) { setMsg({ ok: false, text: 'Dieses Design gibt es mit Plus. ' }); return; }
     const { error } = await supabase.from('profiles').update(patch).eq('id', profile.id);
     if (error) setMsg({ ok: false, text: errorText(error) });
     else { await refresh(); setMsg({ ok: true, text: 'Gespeichert.' }); }
