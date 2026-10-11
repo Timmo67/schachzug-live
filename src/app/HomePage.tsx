@@ -11,8 +11,8 @@ export function HomePage() {
       <section className="panel">
         <h1>{session ? `Hallo ${profile?.display_name ?? ''}` : 'Schach mit Freunden, von Angesicht zu Angesicht'}</h1>
         <p>{session
-          ? 'Fordere Freunde zu einer Online-Partie heraus. Videochat neben dem Brett folgt als Nächstes.'
-          : 'Spiele gegen Freunde und sieh sie dabei im Video. Spielen ist gratis, Video gibt es mit Plus.'}</p>
+          ? 'Fordere Freunde zu einer Online-Partie heraus und sieh sie dabei im Video neben dem Brett.'
+          : 'Spiele gegen Freunde und sieh sie dabei im Video. Spielen ist gratis, dazu 10 Minuten Video pro Woche – unbegrenzt mit Plus.'}</p>
         {trialEnd && <p className="success">Deine Plus-Testphase läuft bis {trialEnd}. Danach geht es automatisch mit Basis weiter, ohne Kosten.</p>}
         <div className="row">
           <Link className="btn primary" to="/spielen">Auf einem Gerät spielen</Link>
@@ -22,8 +22,8 @@ export function HomePage() {
       <section className="panel">
         <h2>Was als Nächstes kommt</h2>
         <ul className="note" style={{ margin: 0, paddingLeft: '1.1em' }}>
-          <li>Videochat neben dem Brett</li>
           <li>Plus und Pro mit Analyse und KI-Coach</li>
+          <li>Apps für iPhone und Android</li>
         </ul>
         {session && <div className="row"><button type="button" onClick={() => void signOut()}>Abmelden</button></div>}
       </section>
