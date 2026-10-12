@@ -16,6 +16,8 @@ export function LoginPage() {
   const [terms, setTerms] = useState(false);
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [error, setError] = useState('');
+  const [otp, setOtp] = useState('');
+  const [verifying, setVerifying] = useState(false);
 
   if (session) return <Navigate to="/" replace />;
 
@@ -39,6 +41,18 @@ export function LoginPage() {
       },
     });
     if (err) { setError(errorText(err)); setState('error'); } else setState('sent');
+  }
+
+  // The e-mail also contains a code. Needed on iPhone home-screen apps (the link opens in Safari, which
+  // has its own login) and when the e-mail is read on another device.
+  async function verify(e: FormEvent) {
+    e.preventDefault();
+    if (!supabase) return;
+    setVerifying(true);
+    setError('');
+    const { error: err } = await supabase.auth.verifyOtp({ email: email.trim(), token: otp.trim(), type: 'email' });
+    setVerifying(false);
+    if (err) setError(/expired|invalid/i.test(err.message) ? 'Der Code stimmt nicht oder ist abgelaufen.' : errorText(err));
   }
 
   if (!supabase) {
@@ -74,9 +88,20 @@ export function LoginPage() {
         <button className="primary" type="submit" disabled={state === 'sending' || (signingUp && (!adult || !terms))}>
           {state === 'sending' ? 'Sende…' : 'Anmelde-Link schicken'}
         </button>
-        {state === 'sent' && <p className="success" role="status">Link ist unterwegs. Öffne die E-Mail auf diesem Gerät.</p>}
+        {state === 'sent' && <p className="success" role="status">E-Mail ist unterwegs. Tippe auf den Link darin – oder gib unten den Code aus der E-Mail ein.</p>}
         {state === 'error' && <p className="error" role="alert">{error}</p>}
       </form>
+      {state === 'sent' && (
+        <form className="panel" onSubmit={verify}>
+          <h2>Code eingeben</h2>
+          <p className="note">Praktisch, wenn du Knightcall vom Home-Bildschirm nutzt oder die E-Mail auf einem anderen Gerät liest.</p>
+          <label className="lbl" htmlFor="otp">Code aus der E-Mail</label>
+          <input id="otp" className="mono" inputMode="numeric" autoComplete="one-time-code" maxLength={10} value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} placeholder="123456" style={{ letterSpacing: '.2em' }} />
+          <button className="primary" type="submit" disabled={verifying || otp.length < 6}>{verifying ? 'Prüfe…' : 'Anmelden'}</button>
+          {error && <p className="error" role="alert">{error}</p>}
+        </form>
+      )}
       <div className="panel">
         <h2>Geschlossene Beta</h2>
         <p className="note">Knightcall ist gerade in einer kostenlosen, geschlossenen Testphase. Neu anmelden kannst du dich mit dem Einladungslink oder -code eines Freundes. In der Beta ist alles frei – auch Video und alle Designs.</p>

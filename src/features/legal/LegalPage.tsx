@@ -92,9 +92,10 @@ export function LegalPage({ slug }: { slug: LegalSlug }) {
 }
 
 /** Footer with the legal links; the Impressum must be reachable from every page. */
-export function LegalFooter() {
+export function LegalFooter({ extra }: { extra?: ReactNode }) {
   return (
     <footer className="legalfooter">
+      {extra}
       <Link to="/impressum">Impressum</Link>
       <Link to="/datenschutz">Datenschutz</Link>
       <Link to="/agb">AGB</Link>

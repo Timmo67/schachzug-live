@@ -1,6 +1,25 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthProvider';
 
+const isStandalone = () =>
+  window.matchMedia?.('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
+const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+/** Short how-to for adding Knightcall to the home screen, hidden when it already runs from there. */
+function HomeScreenHint() {
+  if (isStandalone()) return null;
+  return (
+    <>
+      <span className="lbl">Als App auf dem Handy</span>
+      <p className="note" data-testid="homescreen-hint">
+        {isIos()
+          ? 'Tippe in Safari auf „Teilen“ (Quadrat mit Pfeil) und dann auf „Zum Home-Bildschirm“. Knightcall startet dann wie eine App. Zum Anmelden dort den Code aus der E-Mail nutzen.'
+          : 'Öffne im Browser das Menü (⋮) und tippe auf „App installieren“ bzw. „Zum Startbildschirm hinzufügen“.'}
+      </p>
+    </>
+  );
+}
+
 export function HomePage() {
   const { session, profile, entitlement, signOut } = useAuth();
   const beta = entitlement?.source === 'beta';
@@ -22,12 +41,28 @@ export function HomePage() {
         </div>
       </section>
       <section className="panel">
-        <h2>Was als Nächstes kommt</h2>
-        <ul className="note" style={{ margin: 0, paddingLeft: '1.1em' }}>
-          <li>Plus und Pro mit Analyse und KI-Coach</li>
-          <li>Apps für iPhone und Android</li>
-        </ul>
-        {session && <div className="row"><button type="button" onClick={() => void signOut()}>Abmelden</button></div>}
+        {session ? (
+          <>
+            <h2>So geht’s</h2>
+            <ol className="note steps">
+              <li>Unter <Link to="/freunde">Freunde</Link> deinen Einladungslink oder QR-Code teilen.</li>
+              <li>Freund herausfordern, Bedenkzeit wählen – er bekommt sofort eine Meldung.</li>
+              <li>In der Partie auf „Video starten“ tippen. Tipp: Mit Kopfhörern gibt es kein Echo.</li>
+            </ol>
+            <HomeScreenHint />
+            <p className="note">Etwas klemmt oder du hast eine Idee? <Link to="/feedback" state={{ from: '/' }}>Schreib uns dein Feedback.</Link></p>
+            <div className="row"><button type="button" onClick={() => void signOut()}>Abmelden</button></div>
+          </>
+        ) : (
+          <>
+            <h2>Was als Nächstes kommt</h2>
+            <ul className="note steps">
+              <li>Plus und Pro mit Analyse und KI-Coach</li>
+              <li>Apps für iPhone und Android</li>
+            </ul>
+            <HomeScreenHint />
+          </>
+        )}
       </section>
     </div>
   );

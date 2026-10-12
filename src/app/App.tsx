@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthProvider';
 import { LoginPage } from '../features/auth/LoginPage';
 import { FriendsPage } from '../features/friends/FriendsPage';
@@ -11,7 +11,9 @@ import { NotificationStack } from '../features/notify/NotificationStack';
 import { useGameNotifications } from '../features/notify/useGameNotifications';
 import { DesignPage } from '../features/appearance/DesignPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
+import { FeedbackPage } from '../features/feedback/FeedbackPage';
 import { LegalFooter, LegalPage } from '../features/legal/LegalPage';
+import { ErrorBoundary } from './ErrorBoundary';
 import { HomePage } from './HomePage';
 
 const PLAN_LABEL: Record<string, string> = { free: 'Basis', plus: 'Plus', pro: 'Pro', family: 'Familie', club: 'Verein' };
@@ -21,6 +23,7 @@ export function App() {
   const { session, entitlement, refresh } = useAuth();
   const [toast, setToast] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { notices, dismiss, badge } = useGameNotifications(session?.user.id);
 
   // After signing in via magic link, redeem an invite that was opened before login.
@@ -59,25 +62,28 @@ export function App() {
         </nav>
       </header>
       <main>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/spielen" element={<LocalGamePage />} />
-          <Route path="/anmelden" element={<LoginPage />} />
-          <Route path="/freunde" element={<FriendsPage />} />
-          <Route path="/partien" element={<GamesPage />} />
-          <Route path="/design" element={<DesignPage />} />
-          <Route path="/profil" element={<ProfilePage />} />
-          <Route path="/impressum" element={<LegalPage slug="impressum" />} />
-          <Route path="/datenschutz" element={<LegalPage slug="datenschutz" />} />
-          <Route path="/agb" element={<LegalPage slug="agb" />} />
-          <Route path="/widerruf" element={<LegalPage slug="widerruf" />} />
-          <Route path="/nutzungsbedingungen" element={<LegalPage slug="nutzungsbedingungen" />} />
-          <Route path="/partie/:id" element={<OnlineGamePage />} />
-          <Route path="/i/:code" element={<InvitePage />} />
-          <Route path="*" element={<div className="panel"><h2>Seite nicht gefunden</h2><Link to="/">Zur Startseite</Link></div>} />
-        </Routes>
+        <ErrorBoundary key={location.pathname}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/spielen" element={<LocalGamePage />} />
+            <Route path="/anmelden" element={<LoginPage />} />
+            <Route path="/freunde" element={<FriendsPage />} />
+            <Route path="/partien" element={<GamesPage />} />
+            <Route path="/design" element={<DesignPage />} />
+            <Route path="/profil" element={<ProfilePage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/impressum" element={<LegalPage slug="impressum" />} />
+            <Route path="/datenschutz" element={<LegalPage slug="datenschutz" />} />
+            <Route path="/agb" element={<LegalPage slug="agb" />} />
+            <Route path="/widerruf" element={<LegalPage slug="widerruf" />} />
+            <Route path="/nutzungsbedingungen" element={<LegalPage slug="nutzungsbedingungen" />} />
+            <Route path="/partie/:id" element={<OnlineGamePage />} />
+            <Route path="/i/:code" element={<InvitePage />} />
+            <Route path="*" element={<div className="panel"><h2>Seite nicht gefunden</h2><Link to="/">Zur Startseite</Link></div>} />
+          </Routes>
+        </ErrorBoundary>
       </main>
-      <LegalFooter />
+      <LegalFooter extra={session && <Link to="/feedback" state={{ from: location.pathname }} className="feedbacklink">Feedback geben</Link>} />
       {toast && <div className="toast" role="status">{toast}</div>}
       <NotificationStack notices={notices} dismiss={dismiss} />
     </div>

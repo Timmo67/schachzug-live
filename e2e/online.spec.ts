@@ -351,3 +351,103 @@ test('login page: without a code only existing accounts, with a code the beta ch
   await expect(page.getByLabel('Ich bin mindestens 18 Jahre alt.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Anmelde-Link schicken' })).toBeDisabled();
 });
+
+/** Two befriended users with a running game (Anna White, Ben Black), via the same RPCs the app uses. */
+async function runningGame() {
+  const anna = await makeUser('Anna');
+  const ben = await makeUser('Ben');
+  await admin.from('friendships').insert({ requester_id: anna.id, addressee_id: ben.id, status: 'accepted' });
+  const asUser = (s: { access_token: string } | null) =>
+    createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${s!.access_token}` } } });
+  const { data: gameId, error } = await asUser(anna.session).rpc('create_game', { p_opponent: ben.id, p_time_control: '10+0', p_color: 'w' });
+  expect(error).toBeNull();
+  expect((await asUser(ben.session).rpc('respond_game', { p_game: gameId, p_action: 'accept' })).error).toBeNull();
+  return { anna, ben, gameId: gameId as string };
+}
+
+test('rematch: after the game a new challenge with swapped colours is one tap away', async ({ browser }) => {
+  const { anna, ben, gameId } = await runningGame();
+  const a = await signedInPage(browser, anna.session);
+  const b = await signedInPage(browser, ben.session);
+  await a.goto(`/partie/${gameId}`);
+  await a.getByRole('button', { name: 'Aufgeben' }).click();
+  await a.getByRole('button', { name: 'Ja, aufgeben' }).click();
+  await expect(a.getByTestId('status')).toContainText('Du verlierst');
+
+  await a.getByRole('button', { name: 'Revanche' }).click();
+  await expect(a).not.toHaveURL(new RegExp(gameId));
+  await expect(a.getByTestId('status')).toContainText('Warte, bis Ben annimmt');
+
+  await b.goto('/partien');
+  await b.getByTestId('incoming').getByRole('button', { name: 'Annehmen' }).click();
+  await expect(b).toHaveURL(a.url());
+  // Colours are swapped: Ben is White now and moves first.
+  await expect(b.getByTestId('status')).toHaveText('Du bist am Zug');
+});
+
+test('feedback: beta testers send feedback, nobody else can read it', async ({ browser }) => {
+  const anna = await makeUser('Anna', true);
+  const ben = await makeUser('Ben', true);
+  const a = await signedInPage(browser, anna.session);
+  await a.goto('/partien');
+  await a.getByRole('link', { name: 'Feedback geben' }).click();
+  await a.getByLabel('Deine Nachricht').fill('Das Video ruckelt auf meinem alten Handy.');
+  await a.getByRole('button', { name: 'Feedback senden' }).click();
+  await expect(a.getByRole('status')).toHaveText('Danke! Dein Feedback ist angekommen.');
+
+  const { data } = await admin.from('feedback').select('user_id, body, page').eq('user_id', anna.id);
+  expect(data).toEqual([{ user_id: anna.id, body: 'Das Video ruckelt auf meinem alten Handy.', page: '/partien' }]);
+
+  const asBen = createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${ben.session!.access_token}` } } });
+  expect((await asBen.from('feedback').select('id')).data).toEqual([]);
+  // Nobody can send feedback in someone else's name.
+  expect((await asBen.from('feedback').insert({ user_id: anna.id, body: 'Fake' })).error).toBeTruthy();
+});
+
+test('account deletion: everything personal is gone, the running game counts as resigned', async ({ browser }) => {
+  const { anna, ben, gameId } = await runningGame();
+  await admin.from('feedback').insert({ user_id: ben.id, body: 'Bitte löschen' });
+  const b = await signedInPage(browser, ben.session);
+  await b.goto('/profil');
+  const del = b.getByRole('button', { name: 'Konto endgültig löschen' });
+  await expect(del).toBeDisabled();
+  await b.getByLabel('Zum Bestätigen LÖSCHEN eintippen').fill('löschen');
+  await del.click();
+  await expect(b).toHaveURL(/\/anmelden/);
+
+  expect((await admin.auth.admin.getUserById(ben.id)).data.user).toBeNull();
+  expect((await admin.from('profiles').select('id').eq('id', ben.id)).data).toEqual([]);
+  expect((await admin.from('friendships').select('requester_id').or(`requester_id.eq.${ben.id},addressee_id.eq.${ben.id}`)).data).toEqual([]);
+  expect((await admin.from('feedback').select('id').eq('user_id', ben.id)).data).toEqual([]);
+
+  // Anna won the running game, and it stays in her archive.
+  const a = await signedInPage(browser, anna.session);
+  await a.goto(`/partie/${gameId}`);
+  await expect(a.getByTestId('status')).toContainText('Du gewinnst');
+  const { data: g } = await admin.from('games').select('status, result, black_id').eq('id', gameId).single();
+  expect(g).toEqual({ status: 'finished', result: '1-0', black_id: null });
+});
+
+test('login with the code from the e-mail (for home-screen apps and other devices)', async ({ browser }) => {
+  const anna = await makeUser('Anna', true);
+  const { data: u } = await admin.auth.admin.getUserById(anna.id);
+  const email = u.user!.email!;
+  const page = await (await browser.newContext()).newPage();
+  // No mail server in the test stack: pretend the e-mail went out, then take the code from the admin API.
+  await page.route('**/auth/v1/otp*', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await page.goto('/anmelden');
+  await page.getByLabel('E-Mail').fill(email);
+  await page.getByRole('button', { name: 'Anmelde-Link schicken' }).click();
+  await expect(page.getByRole('status')).toContainText('Code');
+
+  await page.getByLabel('Code aus der E-Mail').fill('000000');
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveText('Der Code stimmt nicht oder ist abgelaufen.');
+
+  const { data: link, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
+  expect(error).toBeNull();
+  await page.getByLabel('Code aus der E-Mail').fill(link.properties!.email_otp);
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Hallo Anna/ })).toBeVisible();
+  await expect(page.getByTestId('homescreen-hint')).toBeVisible();
+});

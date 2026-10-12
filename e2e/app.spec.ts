@@ -83,3 +83,13 @@ test('legal pages are linked from every page and fonts come from our own domain'
   expect(await page.evaluate(() => document.fonts.check('600 16px "Bricolage Grotesque"'))).toBe(true);
   expect(external).toEqual([]);
 });
+
+test('can be added to the home screen: manifest and icons are served', async ({ page, request }) => {
+  await page.goto('/');
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.webmanifest');
+  const manifest = await (await request.get('/manifest.webmanifest')).json();
+  expect(manifest).toMatchObject({ name: 'Knightcall', display: 'standalone', start_url: '/' });
+  for (const icon of manifest.icons as Array<{ src: string }>) expect((await request.get(icon.src)).ok()).toBe(true);
+  expect((await request.get('/apple-touch-icon.png')).ok()).toBe(true);
+  await expect(page.getByTestId('homescreen-hint')).toBeVisible();
+});
