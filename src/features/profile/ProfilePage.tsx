@@ -14,6 +14,7 @@ export function ProfilePage() {
   const [busy, setBusy] = useState(false);
   const [sound, setSound] = useState(soundEnabled);
   const [permission, setPermission] = useState(() => (notificationsSupported() ? Notification.permission : 'unsupported'));
+  const [confirmDelete, setConfirmDelete] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (!ready) return <div className="panel"><p className="muted">Wird geladen …</p></div>;
@@ -59,6 +60,17 @@ export function ProfilePage() {
     await refresh();
   }
 
+  // Deletes the account for good: picture from Storage first, then everything else on the server.
+  async function deleteAccount() {
+    setMsg(null);
+    setBusy(true);
+    await client.storage.from('avatars').remove([`${profile!.id}/avatar.webp`]);
+    const { error } = await client.rpc('delete_my_account');
+    setBusy(false);
+    if (error) { setMsg({ ok: false, text: errorText(error) }); return; }
+    await signOut();
+  }
+
   return (
     <div className="grid2">
       <section className="panel">
@@ -91,6 +103,14 @@ export function ProfilePage() {
         {permission === 'granted' && <p className="note">Browser-Benachrichtigungen sind erlaubt.</p>}
         {permission === 'denied' && <p className="note">Browser-Benachrichtigungen sind in deinen Browser-Einstellungen blockiert.</p>}
         <div className="row"><button type="button" onClick={() => void signOut()}>Abmelden</button></div>
+
+        <h2>Konto löschen</h2>
+        <p className="note">Dein Profil, deine Freundschaften, Chat-Nachrichten und dein Profilbild werden endgültig gelöscht. Laufende Partien gelten als aufgegeben. Beendete Partien bleiben im Archiv deiner Gegner – ohne deinen Namen.</p>
+        <label className="lbl" htmlFor="confirm-delete">Zum Bestätigen LÖSCHEN eintippen</label>
+        <div className="row">
+          <input id="confirm-delete" value={confirmDelete} onChange={(e) => setConfirmDelete(e.target.value)} autoComplete="off" style={{ flex: 1 }} />
+          <button type="button" className="danger" disabled={busy || confirmDelete.trim().toUpperCase() !== 'LÖSCHEN'} onClick={() => void deleteAccount()}>Konto endgültig löschen</button>
+        </div>
       </section>
     </div>
   );

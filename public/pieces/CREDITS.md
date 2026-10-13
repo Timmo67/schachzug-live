@@ -10,3 +10,6 @@ Bezogen über das lichess-Projekt (github.com/lichess-org/lila, `public/piece/`)
 | papercut | Nikolay Anzarov (nikoichu.itch.io) | CC BY 4.0 (creativecommons.org/licenses/by/4.0/) |
 
 Die Dateien sind unverändert.
+
+## App-Symbol
+`public/icon*.svg`, `public/favicon.svg` und die daraus erzeugten PNG-Dateien enthalten den weißen Springer aus `chessnut` (Alexis Luengas, Apache 2.0), verkleinert auf farbigem Hintergrund.

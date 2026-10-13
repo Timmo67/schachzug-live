@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import type { Color, PieceSymbol, Square } from 'chess.js';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -9,7 +9,7 @@ import { Board } from './Board';
 import { captured, fromUci, movePairs, tryMove } from './chessRules';
 import { clocksAt } from '../../../supabase/functions/_shared/gameLogic';
 import {
-  downloadPgn, fetchGame, formatClock, gameAction, gameErrorText, respondGame, resultText, sendMove,
+  createGame, downloadPgn, fetchGame, formatClock, gameAction, gameErrorText, respondGame, resultText, sendMove,
   timeControlLabel, type GameRow,
 } from './onlineGame';
 
@@ -18,6 +18,7 @@ type Message = { id: number; sender_id: string; body: string; created_at: string
 export function OnlineGamePage() {
   const { id = '' } = useParams();
   const { session, ready } = useAuth();
+  const navigate = useNavigate();
   const me = session?.user.id;
   const [game, setGame] = useState<GameRow | null>(null);
   const [missing, setMissing] = useState(false);
@@ -143,6 +144,15 @@ export function OnlineGamePage() {
     void reload();
   }
 
+  // Rematch: a new challenge with the same time control and swapped colours.
+  async function rematch() {
+    if (!game || !opponentId || !myColor) return;
+    setMsg(null);
+    const r = await createGame(opponentId, game.time_control, myColor === 'w' ? 'b' : 'w');
+    if (r.id) navigate(`/partie/${r.id}`);
+    else setMsg(gameErrorText(r.error ?? ''));
+  }
+
   async function sendChat(e: FormEvent) {
     e.preventDefault();
     const body = draft.trim();
@@ -211,6 +221,9 @@ export function OnlineGamePage() {
               </button>
               <button type="button" onClick={() => setConfirmResign(true)}>Aufgeben</button>
             </>
+          )}
+          {game.status === 'finished' && myColor && opponentId && (
+            <button type="button" className="primary" onClick={() => void rematch()}>Revanche</button>
           )}
           {(game.status === 'finished' || game.moves_uci.length > 0) && (
             <button type="button" onClick={() => downloadPgn(game, name('w'), name('b'))}>PGN herunterladen</button>

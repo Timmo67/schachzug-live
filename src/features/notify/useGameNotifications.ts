@@ -112,7 +112,20 @@ export function useGameNotifications(me: string | undefined) {
         if (p.extension === 'postgres_changes' && p.status === 'ok') void load();
       })
       .subscribe((s) => { if (s === 'SUBSCRIBED') void load(); });
-    return () => { void client.removeChannel(ch); };
+    // Phones pause the socket in the background or when locked; catch up when the app is visible again,
+    // and poll as a safety net for events lost while the socket was quietly reconnecting.
+    const wake = () => { if (document.visibilityState === 'visible') void load(); };
+    const poll = setInterval(wake, 30_000);
+    document.addEventListener('visibilitychange', wake);
+    window.addEventListener('online', wake);
+    window.addEventListener('pageshow', wake);
+    return () => {
+      void client.removeChannel(ch);
+      clearInterval(poll);
+      document.removeEventListener('visibilitychange', wake);
+      window.removeEventListener('online', wake);
+      window.removeEventListener('pageshow', wake);
+    };
   }, [me, raise, recount]);
 
   // Unread count in the tab title, e.g. "(2) Knightcall".

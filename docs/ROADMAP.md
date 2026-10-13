@@ -55,7 +55,8 @@ Jeder Meilenstein endet mit einer lauffähigen Version und einer kurzen deutsche
 - **Rätsel** (Plus): Taktikaufgaben passend zur Spielstärke.
 - **Zufallsgegner** (auch gratis): Partie gegen Fremde, **ohne Video** (Kernregel 4, Minderjährigenschutz).
 - **Einführungsangebot** (M4): z. B. die ersten 100 Nutzer bekommen ein halbes Jahr Plus gratis.
-- Benachrichtigungen bei weiteren Tests verfeinern (Ton ist abschaltbar, Standard aus).
+- Benachrichtigungen bei weiteren Tests verfeinern (Ton ist abschaltbar, Standard aus). – Zuverlässigkeit nach Handy-Sperre verbessert 12.10.2026.
+- **Reihenfolge (12.10.2026 bestätigt):** Analyse → Rätsel → Training → Zufallsgegner (vorher Melden/Blockieren).
 
 ## Später (Ausbaustufe 2, ca. 400 h)
 Analyse + Puzzles (Stockfish WASM) · KI-Coach · private Turniere · Gruppen-Video und Zuschauer (LiveKit) · Partie-Aufzeichnung mit Video · Vereins-/Trainermodus · Familienabo.
