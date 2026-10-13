@@ -53,6 +53,7 @@ export function HomePage() {
         <div className="row">
           <Link className="btn primary" to="/spielen">Auf einem Gerät spielen</Link>
           {session ? <Link className="btn" to="/partien">Online-Partien</Link> : <Link className="btn" to="/anmelden">Anmelden</Link>}
+          {session && <Link className="btn" to="/zufall">Zufallsgegner</Link>}
         </div>
       </section>
       <section className="panel">

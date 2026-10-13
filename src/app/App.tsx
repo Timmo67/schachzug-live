@@ -14,6 +14,8 @@ import { ProfilePage } from '../features/profile/ProfilePage';
 import { FeedbackPage } from '../features/feedback/FeedbackPage';
 import { PuzzlePage } from '../features/puzzles/PuzzlePage';
 import { TrainingPage } from '../features/training/TrainingPage';
+import { RandomPage } from '../features/random/RandomPage';
+import { ModerationPage } from '../features/moderation/ModerationPage';
 import { LegalFooter, LegalPage } from '../features/legal/LegalPage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { HomePage } from './HomePage';
@@ -78,6 +80,8 @@ export function App() {
             <Route path="/feedback" element={<FeedbackPage />} />
             <Route path="/raetsel" element={<PuzzlePage />} />
             <Route path="/training" element={<TrainingPage />} />
+            <Route path="/zufall" element={<RandomPage />} />
+            <Route path="/moderation" element={<ModerationPage />} />
             <Route path="/lizenzen" element={<LicensesPage />} />
             <Route path="/impressum" element={<LegalPage slug="impressum" />} />
             <Route path="/datenschutz" element={<LegalPage slug="datenschutz" />} />

@@ -4,6 +4,7 @@ import { errorText, supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { notificationsSupported, setSoundEnabled, soundEnabled } from '../notify/useGameNotifications';
 import { Avatar } from './Avatar';
+import { BlockedList } from './BlockedList';
 import { toSquareWebp } from './avatarImage';
 
 /** Name, profile picture and notification settings. */
@@ -103,6 +104,9 @@ export function ProfilePage() {
         {permission === 'granted' && <p className="note">Browser-Benachrichtigungen sind erlaubt.</p>}
         {permission === 'denied' && <p className="note">Browser-Benachrichtigungen sind in deinen Browser-Einstellungen blockiert.</p>}
         <div className="row"><button type="button" onClick={() => void signOut()}>Abmelden</button></div>
+
+        <BlockedList me={profile.id} />
+        {profile.is_admin && <div className="row"><Link className="btn" to="/moderation">Moderation</Link></div>}
 
         <h2>Konto löschen</h2>
         <p className="note">Dein Profil, deine Freundschaften, Chat-Nachrichten und dein Profilbild werden endgültig gelöscht. Laufende Partien gelten als aufgegeben. Beendete Partien bleiben im Archiv deiner Gegner – ohne deinen Namen.</p>
