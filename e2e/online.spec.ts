@@ -517,3 +517,65 @@ test('analysis: free players get one per day, Plus is unlimited, only own finish
   // Nobody sees other people's analyses.
   expect((await as(anna.session).from('game_analyses').select('user_id')).data).toEqual([{ user_id: anna.id }]);
 });
+
+/** A puzzle only this test can get: rated far above the real ones, matched to the user's puzzle rating. */
+async function privatePuzzle(userId: string, fen: string, moves: string[]) {
+  // Far away from the real puzzles (400–2900) and from other test runs.
+  const rating = 20_000 + Math.floor(Math.random() * 1_000_000);
+  const id = `e2e${Math.random().toString(36).slice(2, 10)}`;
+  expect((await admin.from('puzzles').insert({ id, fen, moves, rating, themes: ['mate', 'mateIn2'] })).error).toBeNull();
+  await admin.from('puzzle_stats').upsert({ user_id: userId, rating });
+  return id;
+}
+
+test('puzzles: solve one (opponent answers in between), fail one and see the solution', async ({ browser }) => {
+  const anna = await makeUser('Anna', true);
+  // 1…Kd7 2.Be6+ Kd8 3.Qf8# – a mate in two for White.
+  const solvedId = await privatePuzzle(anna.id, 'q3k1nr/1pp1nQpp/3p4/1P2p3/4P3/B1PP1b2/B5PP/5K2 b k - 0 17', ['e8d7', 'a2e6', 'd7d8', 'f7f8']);
+  const a = await signedInPage(browser, anna.session);
+  await a.goto('/raetsel');
+  await expect(a.getByTestId('puzzle-status')).toHaveText('Finde den besten Zug für Weiß');
+  await expect(a.getByTestId('puzzle-rating')).toHaveText(/^\d{5,}$/);
+  await move(a, 'a2', 'e6');
+  await expect(a.getByTestId('puzzle-status')).toHaveText('Finde den besten Zug für Weiß'); // after the opponent's reply
+  await move(a, 'f7', 'f8');
+  await expect(a.getByTestId('puzzle-status')).toHaveText('Richtig gelöst!');
+  await expect(a.getByTestId('puzzle-delta')).toHaveText(/^\+\d+$/);
+  await expect(a.getByTestId('puzzle-themes')).toContainText('Matt in 2');
+  const { data: att } = await admin.from('puzzle_attempts').select('solved').eq('user_id', anna.id).eq('puzzle_id', solvedId).single();
+  expect(att!.solved).toBe(true);
+
+  // Next one: a wrong move counts as failed; the solution can be shown.
+  const failedId = await privatePuzzle(anna.id, '6k1/1p3ppp/8/8/8/8/5PPP/R2R2K1 b - - 0 1', ['b7b6', 'd1d8']);
+  await a.getByRole('button', { name: 'Nächstes Rätsel' }).click();
+  await expect(a.getByTestId('puzzle-status')).toHaveText('Finde den besten Zug für Weiß');
+  await move(a, 'd1', 'd7');
+  await expect(a.getByTestId('puzzle-status')).toHaveText('Das war nicht der beste Zug.');
+  await a.getByRole('button', { name: 'Lösung zeigen' }).click();
+  await expect(a.getByTestId('puzzle-status')).toHaveText('So geht die Lösung.');
+  await expect(a.locator('[data-square="d8"] .pc')).toHaveCount(1);
+  const { data: att2 } = await admin.from('puzzle_attempts').select('solved').eq('user_id', anna.id).eq('puzzle_id', failedId).single();
+  expect(att2!.solved).toBe(false);
+});
+
+test('puzzles: Plus only, solutions never readable, each puzzle counts once', async ({ browser }) => {
+  const free = await makeUser('Free');
+  const plus = await makeUser('Plus', true);
+  const as = (s: { access_token: string } | null) =>
+    createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${s!.access_token}` } } });
+  expect((await as(free.session).rpc('next_puzzle')).error?.message).toContain('puzzle_requires_plus');
+  const page = await signedInPage(browser, free.session);
+  await page.goto('/raetsel');
+  await expect(page.getByTestId('puzzle-status')).toHaveText('Rätsel gibt es mit Plus.');
+
+  expect((await as(plus.session).from('puzzles').select('id').limit(1)).data).toEqual([]);
+  const { data: p, error } = await as(plus.session).rpc('next_puzzle');
+  expect(error).toBeNull();
+  // Reloading hands out the same open puzzle instead of a new one.
+  expect((await as(plus.session).rpc('next_puzzle')).data.id).toBe(p.id);
+  expect((await as(plus.session).rpc('submit_puzzle', { p_puzzle: p.id, p_solved: true })).error).toBeNull();
+  expect((await as(plus.session).rpc('submit_puzzle', { p_puzzle: p.id, p_solved: true })).error?.message).toContain('puzzle_not_open');
+  expect((await as(plus.session).rpc('submit_puzzle', { p_puzzle: 'never-handed-out', p_solved: true })).error?.message).toContain('puzzle_not_open');
+  const { data: s } = await as(plus.session).rpc('puzzle_status');
+  expect(s).toMatchObject({ solved: 1, failed: 0, streak: 1, plus: true });
+});

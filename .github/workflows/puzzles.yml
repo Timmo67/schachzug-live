@@ -1,0 +1,23 @@
+name: Build puzzles
+# Downloads the lichess puzzle database (CC0) and commits the selection as a migration.
+# Runs when the build script changes on a claude/* branch, or by hand.
+on:
+  push:
+    branches: ['claude/**']
+    paths: [scripts/build-puzzles.mjs, .github/workflows/puzzles.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: curl -sSL --fail https://database.lichess.org/lichess_db_puzzle.csv.zst | zstd -dc | node scripts/build-puzzles.mjs > supabase/migrations/0013_puzzle_data.sql
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/migrations/0013_puzzle_data.sql
+          git diff --cached --quiet || (git commit -m "Update puzzle selection from the lichess puzzle database" && git push)
