@@ -1,0 +1,7 @@
+.puzzlestats { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
+.puzzlestats > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+.puzzlestats b { font-family: var(--f-display); font-size: 1.4rem; }
+.puzzlestats .delta { font-weight: 700; font-size: .9rem; }
+.puzzlestats .delta.up { color: var(--ok); }
+.puzzlestats .delta.down { color: var(--check); }
+.status.bad { color: var(--check); }
