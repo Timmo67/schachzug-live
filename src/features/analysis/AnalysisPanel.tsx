@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Chess } from 'chess.js';
+import { localSan } from '../game/chessRules';
 import {
   JUDGEMENT_SYMBOL, JUDGEMENT_TEXT, cpOf, evalText, reviewMoves, summarize, type Eval,
 } from './analysisLogic';
@@ -17,9 +18,9 @@ type Props = {
   names: { w: string; b: string };
 };
 
-/** SAN of a UCI move in the given position. */
+/** SAN of a UCI move in the given position, in the user's notation. */
 function san(fen: string, uci: string): string {
-  try { return new Chess(fen).move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] }).san; } catch { return uci; }
+  try { return localSan(new Chess(fen).move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] }).san); } catch { return uci; }
 }
 
 const H = 80;

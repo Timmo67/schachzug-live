@@ -15,6 +15,15 @@ test('local game: scholar\'s mate ends the game', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Aufgeben' })).toBeDisabled();
 });
 
+test('moves are written in the notation of the browser language', async ({ browser }) => {
+  const page = await (await browser.newContext({ locale: 'de-DE' })).newPage();
+  await page.goto('/spielen');
+  for (const [a, b] of [['e2', 'e4'], ['e7', 'e5'], ['g1', 'f3'], ['b8', 'c6'], ['f1', 'b5']]) await move(page, a, b);
+  await expect(page.getByTestId('moves')).toContainText('Sf3');
+  await expect(page.getByTestId('moves')).toContainText('Sc6');
+  await expect(page.getByTestId('moves')).toContainText('Lb5');
+});
+
 async function dragMove(page: Page, from: string, to: string) {
   // Measure only once the layout is settled (web fonts loaded, board fully in view).
   await page.evaluate(() => document.fonts.ready);

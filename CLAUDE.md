@@ -102,6 +102,8 @@ docs/
   E-Mail-Vorlagen mit Link **und** Code: `supabase/templates/` – müssen in Produktion im Dashboard (Authentication → Email Templates: „Magic Link“ und „Confirm signup“) eingetragen werden, sonst enthält die Mail keinen Code.
 - **Partieanalyse (Migration 0011):** Stockfish 18 lite single (npm `stockfish` 18.0.8, GPLv3) wird per `postinstall` (`scripts/copy-engine.mjs`) nach `public/engine/` kopiert (nicht im Git), läuft im Web Worker (`src/features/analysis/engine.ts`, Tiefe 12 / max. 1,5 s pro Stellung). Bewertung/Genauigkeit/Fehlerklassen wie lichess (`analysisLogic.ts`, Vitest). Server: `begin_analysis` (Gratis 1/Tag, Plus unbegrenzt, nur eigene beendete Partien), `save_analysis`, `analysis_status`, Tabelle `game_analyses` (nur lesen eigener Zeilen). Anzeige im Partie-Screen beendeter Partien (Bewertungskurve, Genauigkeit, wichtige Momente, Brett-Navigation). Lizenzseite `/lizenzen`.
   Grenze: Die Engine läuft im Browser, die Tagesgrenze ist serverseitig gezählt, ein manipulierter Client könnte aber lokal weiter analysieren.
+- **Zugnotation:** Anzeige in der Sprache des Browsers (`localSan` in `chessRules.ts`: de → K D T L S, fr/es/it/nl/pl/cs ebenso), PGN-Export bleibt Englisch. Playwright läuft mit `locale: 'en-US'`.
+- **Domain:** `knightcall.app` bei Cloudflare registriert (13.10.2026).
 - Nächster Schritt: Domain + Resend (Auftraggeber), dann M4 Abos im Stripe-Testmodus (unsichtbar bis zur Freischaltung). Firma (UG) später.
 
 ## Befehle

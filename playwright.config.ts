@@ -7,7 +7,8 @@ const online = !!process.env.E2E_ONLINE;
 
 export default defineConfig({
   testDir: 'e2e',
-  use: { baseURL: 'http://localhost:4173', launchOptions: { executablePath } },
+  // English UI locale by default, so move notation is predictable (German letters are tested explicitly).
+  use: { baseURL: 'http://localhost:4173', locale: 'en-US', launchOptions: { executablePath } },
   webServer: [
     { command: 'npm run build && npm run preview', port: 4173, reuseExistingServer: true, timeout: 120_000 },
     ...(online
