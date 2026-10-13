@@ -18,7 +18,7 @@ create policy game_analyses_select_own on public.game_analyses for select to aut
 create policy game_analyses_no_insert on public.game_analyses for insert to authenticated with check (false);
 create policy game_analyses_no_update on public.game_analyses for update to authenticated using (false);
 
-create or replace function public.analysis_free_per_day() returns int language sql immutable as $$ select 1 $$;
+create or replace function public.analysis_free_per_day() returns int language sql immutable set search_path = public as $$ select 1 $$;
 
 -- Starts (or resumes) the analysis of a finished game. Returns the stored evals if it was analysed
 -- before, otherwise null after counting the analysis. Raises analysis_limit when the free quota is used.
