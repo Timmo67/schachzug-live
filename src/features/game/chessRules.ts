@@ -82,9 +82,21 @@ export function kingInCheckSquare(g: Chess): Square | null {
   return null;
 }
 
-/** SAN history grouped as move pairs: [[1, "e4", "e5"], ...] */
+/** Piece letters K, Q, R, B, N in the notation of the user's language (PGN export stays English). */
+const PIECE_LETTERS: Record<string, string> = {
+  de: 'KDTLS', nl: 'KDTLP', fr: 'RDTFC', es: 'RDTAC', it: 'RDTAC', pl: 'KHWGS', cs: 'KDVSJ',
+};
+
+/** Writes a SAN move with the piece letters of the given language, e.g. "Nf3" → "Sf3" in German. */
+export function localSan(san: string, lang = typeof navigator === 'undefined' ? 'en' : navigator.language): string {
+  const letters = PIECE_LETTERS[lang.slice(0, 2).toLowerCase()];
+  if (!letters) return san;
+  return san.replace(/[KQRBN]/g, (c) => letters['KQRBN'.indexOf(c)]);
+}
+
+/** SAN history grouped as move pairs, in the user's notation: [[1, "e4", "e5"], ...] */
 export function movePairs(g: Chess): Array<[number, string, string]> {
-  const h = g.history();
+  const h = g.history().map((m) => localSan(m));
   const out: Array<[number, string, string]> = [];
   for (let i = 0; i < h.length; i += 2) out.push([i / 2 + 1, h[i], h[i + 1] ?? '']);
   return out;

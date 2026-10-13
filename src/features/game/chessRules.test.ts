@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Chess } from 'chess.js';
-import { captured, fromUci, kingInCheckSquare, movePairs, needsPromotion, result, statusText, tryMove } from './chessRules';
+import { captured, fromUci, kingInCheckSquare, localSan, movePairs, needsPromotion, result, statusText, tryMove } from './chessRules';
 
 const SCHOLARS = ['e2e4', 'e7e5', 'f1c4', 'b8c6', 'd1h5', 'g8f6', 'h5f7'];
 
@@ -39,5 +39,17 @@ describe('chessRules', () => {
     const g = fromUci(SCHOLARS)!;
     expect(captured(g).w).toBe('♟︎');
     expect(captured(g).b).toBe('');
+  });
+});
+
+describe('localSan', () => {
+  it('uses the piece letters of the user’s language', () => {
+    expect(localSan('Nf3', 'de-DE')).toBe('Sf3');
+    expect(localSan('Qxf7#', 'de')).toBe('Dxf7#');
+    expect(localSan('exd8=Q+', 'de-AT')).toBe('exd8=D+');
+    expect(localSan('Bb5', 'de')).toBe('Lb5'); // the file b stays lower case
+    expect(localSan('O-O', 'de')).toBe('O-O');
+    expect(localSan('Rxe1', 'fr-FR')).toBe('Txe1');
+    expect(localSan('Nf3', 'en-US')).toBe('Nf3');
   });
 });

@@ -50,7 +50,7 @@ Jeder Meilenstein endet mit einer lauffähigen Version und einer kurzen deutsche
 - **Auftraggeber muss:** Apple Developer Program (99 €/Jahr) und Google Play Console (25 $) beantragen.
 
 ## Ideen des Auftraggebers (11.10.2026, nach erstem Test)
-- **Partieanalyse** (Plus): Engine-Bewertung jeder Partie, Fehler/Patzer markieren.
+- **Partieanalyse** (Plus, gratis 1/Tag): Engine-Bewertung jeder Partie, Fehler/Patzer markieren. – erledigt 13.10.2026 (Online-Partien).
 - **Persönliches Training** (Plus): nach ca. 10 Partien Spielstärke schätzen und passende Lektionen vorschlagen.
 - **Rätsel** (Plus): Taktikaufgaben passend zur Spielstärke.
 - **Zufallsgegner** (auch gratis): Partie gegen Fremde, **ohne Video** (Kernregel 4, Minderjährigenschutz).

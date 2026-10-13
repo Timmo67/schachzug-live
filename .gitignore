@@ -11,3 +11,4 @@ supabase/.temp/
 playwright-report/
 test-results/
 *.tsbuildinfo
+public/engine/

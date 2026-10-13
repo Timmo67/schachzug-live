@@ -5,6 +5,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { Avatar } from '../profile/Avatar';
 import { VideoPanel } from '../video/VideoPanel';
+import { AnalysisPanel } from '../analysis/AnalysisPanel';
+import { useAnalysis } from '../analysis/useAnalysis';
 import { Board } from './Board';
 import { captured, fromUci, movePairs, tryMove } from './chessRules';
 import { clocksAt } from '../../../supabase/functions/_shared/gameLogic';
@@ -32,6 +34,9 @@ export function OnlineGamePage() {
   const [chat, setChat] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const claimed = useRef<number>(-1);
+  // Ply shown on the board while reviewing a finished game (null = current position).
+  const [viewPly, setViewPly] = useState<number | null>(null);
+  const analysis = useAnalysis(id, game?.moves_uci ?? [], game?.status === 'finished');
 
   // Only accept rows that are at least as new as what we have (Realtime and responses can race).
   const accept = useCallback((g: GameRow | null) => {
@@ -113,8 +118,11 @@ export function OnlineGamePage() {
   if (!game || !me) return <div className="panel"><p className="muted">Partie wird geladen …</p></div>;
 
   const myColor: Color | null = me === game.white_id ? 'w' : me === game.black_id ? 'b' : null;
+  const reviewing = game.status === 'finished' && viewPly !== null && viewPly < game.moves_uci.length;
   const moves = pending ? [...game.moves_uci, pending] : game.moves_uci;
   const chess = fromUci(moves) ?? fromUci(game.moves_uci)!;
+  const shownMoves = reviewing ? game.moves_uci.slice(0, viewPly!) : moves;
+  const shown = reviewing ? fromUci(shownMoves)! : chess;
   const caps = captured(chess);
   const bottom: Color = (myColor ?? 'w') === 'w' ? (flipped ? 'b' : 'w') : (flipped ? 'w' : 'b');
   const top: Color = bottom === 'w' ? 'b' : 'w';
@@ -183,7 +191,7 @@ export function OnlineGamePage() {
           <span className="caps">{caps[top]}</span>
           {clockOf(top)}
         </div>
-        <Board game={chess} orientation={bottom} interactive={myTurn} lastMove={moves.at(-1)} onMove={onMove}
+        <Board game={shown} orientation={bottom} interactive={myTurn && !reviewing} lastMove={shownMoves.at(-1)} onMove={onMove}
           onBlocked={() => active && setMsg(myColor ? 'Warte auf den Zug deines Gegners.' : null)} />
         <div className="pbar">
           <div className="pname"><i className={`swatch ${bottom}`} /><Avatar url={avatars[(bottom === 'w' ? game.white_id : game.black_id) ?? '']} name={name(bottom)} size={24} />{name(bottom)}</div>
@@ -239,6 +247,10 @@ export function OnlineGamePage() {
       </div>
 
       <aside className="panel">
+        {game.status === 'finished' && myColor && game.moves_uci.length > 0 && (
+          <AnalysisPanel moves={game.moves_uci} state={analysis.state} remaining={analysis.remaining} onStart={() => void analysis.start()}
+            ply={viewPly ?? game.moves_uci.length} onSelect={setViewPly} names={{ w: name('w'), b: name('b') }} />
+        )}
         {myColor && game.status !== 'aborted' && (
           <VideoPanel gameId={game.id} polite={myColor === 'b'} opponentName={name(myColor === 'w' ? 'b' : 'w')} />
         )}
