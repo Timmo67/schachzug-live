@@ -635,3 +635,153 @@ test('training: unlocks after 10 games, analyses missing games and suggests less
   const { data: pz } = await admin.from('puzzles').select('themes').eq('id', open!.puzzle_id).single();
   expect(pz!.themes.some((t: string) => ['hangingPiece', 'trappedPiece'].includes(t))).toBe(true);
 });
+
+const asUser = (s: { access_token: string } | null) =>
+  createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${s!.access_token}` } } });
+
+/** Pairs two users through the matchmaking RPC (as the search page does) and returns the game id. */
+async function matchViaQueue(a: { session: { access_token: string } | null }, b: { session: { access_token: string } | null }) {
+  expect((await asUser(a.session).rpc('find_match', { p_time_control: '5+0' })).data.waiting).toBe(true);
+  const { data } = await asUser(b.session).rpc('find_match', { p_time_control: '5+0' });
+  expect(data.game_id).toBeTruthy();
+  expect((await asUser(a.session).rpc('find_match', { p_time_control: '5+0' })).data.game_id).toBe(data.game_id);
+  return data.game_id as string;
+}
+
+test('random opponents: matched from the search page, no video and fixed phrases between strangers, rating, friend request', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const anna = await makeUser('Anna', true);
+  const ben = await makeUser('Ben', true);
+  const a = await signedInPage(browser, anna.session);
+  const b = await signedInPage(browser, ben.session);
+  for (const p of [a, b]) {
+    await p.goto('/zufall');
+    await expect(p.getByTestId('random-rating')).toHaveText('1200');
+    await p.getByRole('radio', { name: '3 + 2' }).click();
+    await p.getByRole('button', { name: 'Gegner suchen' }).click();
+  }
+  await expect(a).toHaveURL(/\/partie\//, { timeout: 20_000 });
+  await expect(b).toHaveURL(a.url(), { timeout: 20_000 });
+  const gameId = a.url().split('/partie/')[1];
+  const { data: g } = await admin.from('games').select('kind, status, time_control, white_id').eq('id', gameId).single();
+  expect(g).toMatchObject({ kind: 'random', status: 'active', time_control: '3+2' });
+
+  // Strangers: no video (not even free minutes), only fixed chat phrases – also enforced by the server.
+  await expect(a.getByTestId('first-move')).toBeVisible();
+  await expect(a.getByText('Videochat mit')).toHaveCount(0);
+  expect((await asUser(anna.session).rpc('video_status', { p_game: gameId })).data.allowed).toBe(false);
+  await a.getByTestId('phrases').getByRole('button', { name: 'Viel Glück!' }).click();
+  await expect(b.getByTestId('chat')).toContainText('Viel Glück!');
+  const free = await asUser(ben.session).from('game_messages').insert({ game_id: gameId, sender_id: ben.id, body: 'meine Nummer ist …' });
+  expect(free.error?.message).toContain('chat_phrases_only');
+
+  // Ben resigns: Elo moves both ratings by 20 (first games count double).
+  const white = g!.white_id === anna.id ? a : b;
+  await white.getByRole('button', { name: 'Aufgeben' }).click();
+  await white.getByRole('button', { name: 'Ja, aufgeben' }).click();
+  const loser = g!.white_id;
+  const winner = loser === anna.id ? ben.id : anna.id;
+  await expect.poll(async () => (await admin.from('profiles').select('random_rating').eq('id', winner).single()).data!.random_rating).toBe(1220);
+  expect((await admin.from('profiles').select('random_rating, random_games').eq('id', loser).single()).data).toEqual({ random_rating: 1180, random_games: 1 });
+
+  // After the game: friend request; once accepted, the free chat and video come back.
+  await b.reload();
+  await b.getByTestId('stranger-actions').getByRole('button', { name: 'Als Freund anfragen' }).click();
+  await expect(b.getByTestId('game-info')).toHaveText('Freundschaftsanfrage gesendet.');
+  expect((await asUser(anna.session).rpc('respond_friend', { p_other: ben.id, p_action: 'accept' })).error).toBeNull();
+  await a.reload();
+  await expect(a.getByLabel('Nachricht')).toBeVisible();
+  await expect(a.getByTestId('phrases')).toHaveCount(0);
+});
+
+test('random opponents: a side that never moves gets the game called off without rating', async () => {
+  const anna = await makeUser('Anna');
+  const ben = await makeUser('Ben');
+  const gameId = await matchViaQueue(anna, ben);
+  expect((await asUser(anna.session).rpc('abort_random_game', { p_game: gameId })).error?.message).toContain('too_early');
+  await admin.from('games').update({ created_at: new Date(Date.now() - 31_000).toISOString() }).eq('id', gameId);
+  expect((await asUser(anna.session).rpc('abort_random_game', { p_game: gameId })).error).toBeNull();
+  const { data } = await admin.from('games').select('status, termination').eq('id', gameId).single();
+  expect(data).toEqual({ status: 'aborted', termination: 'no_first_move' });
+  expect((await admin.from('profiles').select('random_games').eq('id', anna.id).single()).data!.random_games).toBe(0);
+});
+
+test('blocking: never matched again, no rematch, no friend requests; can be lifted in the profile', async ({ browser }) => {
+  const anna = await makeUser('Anna');
+  const ben = await makeUser('Ben');
+  const gameId = await matchViaQueue(anna, ben);
+  await asUser(anna.session).rpc('game_action', { p_game: gameId, p_action: 'resign' });
+  // Anna can't make the first move-less game finish by resigning – end it as the server would.
+  await admin.from('games').update({ status: 'finished', result: '0-1', termination: 'resign' }).eq('id', gameId);
+
+  const a = await signedInPage(browser, anna.session);
+  await a.goto(`/partie/${gameId}`);
+  await a.getByRole('button', { name: 'Blockieren' }).click();
+  await a.getByRole('button', { name: 'Ja, blockieren' }).click();
+  await expect(a.getByTestId('game-info')).toContainText('Blockiert');
+
+  expect((await asUser(ben.session).rpc('find_match', { p_time_control: '5+0' })).data.waiting).toBe(true);
+  expect((await asUser(anna.session).rpc('find_match', { p_time_control: '5+0' })).data.waiting).toBe(true);
+  expect((await asUser(ben.session).rpc('find_match', { p_time_control: '5+0' })).data.waiting).toBe(true);
+  await asUser(anna.session).rpc('cancel_match');
+  await asUser(ben.session).rpc('cancel_match');
+  expect((await asUser(ben.session).rpc('rematch_random', { p_game: gameId })).error?.message).toContain('not_possible');
+  const { data: annaProfile } = await admin.from('profiles').select('invite_code').eq('id', anna.id).single();
+  await asUser(ben.session).rpc('request_friend', { p_code: annaProfile!.invite_code });
+  const { data: rows } = await admin.from('friendships').select('status').or(`requester_id.eq.${ben.id},addressee_id.eq.${ben.id}`);
+  expect(rows).toEqual([{ status: 'blocked' }]);
+
+  await a.goto('/profil');
+  await expect(a.getByTestId('blocked')).toContainText('Ben');
+  await a.getByTestId('blocked').getByRole('button', { name: 'Aufheben' }).click();
+  await expect(a.getByText('Du hast niemanden blockiert.')).toBeVisible();
+});
+
+test('reports: three reporters exclude a player from random games; an admin releases them', async ({ browser }) => {
+  const trollName = `Troll${Math.random().toString(36).slice(2, 7)}`;
+  const target = await makeUser(trollName);
+  const reporters = [await makeUser('R1'), await makeUser('R2'), await makeUser('R3')];
+  const games: string[] = [];
+  for (const r of reporters) {
+    const { data: g } = await admin.from('games').insert({ white_id: r.id, black_id: target.id, created_by: r.id, status: 'finished',
+      kind: 'random', result: '1-0', termination: 'resign', moves_uci: [] }).select('id').single();
+    games.push(g!.id);
+  }
+  // Report through the page for the first reporter.
+  const r1 = await signedInPage(browser, reporters[0].session);
+  await r1.goto(`/partie/${games[0]}`);
+  await r1.getByRole('button', { name: 'Melden' }).click();
+  await r1.getByLabel('Beleidigender oder unpassender Name').check();
+  await r1.getByLabel('Was ist passiert? (freiwillig)').fill('Name ist beleidigend');
+  await r1.getByRole('button', { name: 'Meldung senden' }).click();
+  await expect(r1.getByTestId('game-info')).toContainText('Danke, deine Meldung ist angekommen');
+  expect((await asUser(reporters[0].session).rpc('report_user', { p_user: target.id, p_game: games[0], p_reason: 'other', p_details: '' })).error?.message).toContain('already_reported');
+  // Only opponents can report; nobody writes reports directly.
+  expect((await asUser(reporters[1].session).rpc('report_user', { p_user: target.id, p_game: games[0], p_reason: 'other', p_details: '' })).error?.message).toContain('invalid_report');
+  expect((await asUser(reporters[1].session).from('reports').insert({ reporter_id: reporters[1].id, reported_id: target.id, reason: 'x' })).error).toBeTruthy();
+  expect((await admin.from('profiles').select('random_banned').eq('id', target.id).single()).data!.random_banned).toBe(false);
+
+  for (const i of [1, 2]) {
+    expect((await asUser(reporters[i].session).rpc('report_user', { p_user: target.id, p_game: games[i], p_reason: 'behaviour', p_details: '' })).error).toBeNull();
+  }
+  expect((await admin.from('profiles').select('random_banned').eq('id', target.id).single()).data!.random_banned).toBe(true);
+  expect((await asUser(target.session).rpc('find_match', { p_time_control: '5+0' })).error?.message).toContain('random_banned');
+  const t = await signedInPage(browser, target.session);
+  await t.goto('/zufall');
+  await expect(t.getByTestId('random-state')).toContainText('vorläufig von Zufallspartien ausgeschlossen');
+  // Nobody can make themselves admin or lift their own exclusion.
+  await asUser(target.session).from('profiles').update({ is_admin: true, random_banned: false }).eq('id', target.id);
+  expect((await admin.from('profiles').select('is_admin, random_banned').eq('id', target.id).single()).data).toEqual({ is_admin: false, random_banned: true });
+  expect((await asUser(target.session).rpc('admin_reports')).error?.message).toContain('not_admin');
+
+  // The admin sees the reports and releases the player.
+  const mod = await makeUser('Mod');
+  await admin.from('profiles').update({ is_admin: true }).eq('id', mod.id);
+  const m = await signedInPage(browser, mod.session);
+  await m.goto('/moderation');
+  const card = m.getByTestId('report-card').filter({ hasText: trollName });
+  await expect(card).toContainText('3 offene Meldungen');
+  await expect(card).toContainText('Name ist beleidigend');
+  await card.getByRole('button', { name: 'Unbegründet – freigeben' }).click();
+  await expect.poll(async () => (await admin.from('profiles').select('random_banned').eq('id', target.id).single()).data!.random_banned).toBe(false);
+});

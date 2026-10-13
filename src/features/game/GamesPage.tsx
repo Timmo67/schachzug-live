@@ -105,7 +105,7 @@ export function GamesPage() {
             </div>
           </>
         )}
-        <div className="row"><Link className="btn primary" to="/freunde">Freund herausfordern</Link></div>
+        <div className="row"><Link className="btn primary" to="/freunde">Freund herausfordern</Link><Link className="btn" to="/zufall">Zufallsgegner suchen</Link></div>
         {permission === 'default' && (
           <div className="row">
             <button type="button" onClick={() => void Notification.requestPermission().then(setPermission)}>Benachrichtigungen erlauben</button>

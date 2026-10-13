@@ -14,10 +14,11 @@ export type GameRow = GameState & {
   version: number;
   created_at: string;
   finished_at: string | null;
+  kind: 'friend' | 'random';
 };
 
 export const GAME_COLS =
-  'id, status, white_id, black_id, created_by, time_control, fen, moves_uci, base_ms, increment_ms, white_ms_left, black_ms_left, last_move_at, result, termination, draw_offer_by, version, created_at, finished_at';
+  'id, status, white_id, black_id, created_by, time_control, fen, moves_uci, base_ms, increment_ms, white_ms_left, black_ms_left, last_move_at, result, termination, draw_offer_by, version, created_at, finished_at, kind';
 
 export const TIME_CONTROLS = [
   { id: '3+2', label: '3 + 2' },
@@ -40,6 +41,9 @@ const ERRORS: Record<string, string> = {
   draw_already_offered: 'Es gibt schon ein Remisangebot.',
   no_draw_offer: 'Es gibt kein Remisangebot.',
   conflict: 'Gleichzeitige Änderung – bitte noch einmal versuchen.',
+  chat_phrases_only: 'Mit Spielern, die nicht deine Freunde sind, gehen nur die festen Kurzsätze.',
+  not_possible: 'Eine Revanche ist hier nicht möglich.',
+  already_reported: 'Du hast diesen Spieler schon gemeldet. Wir schauen es uns an.',
 };
 
 export function gameErrorText(code: string): string {
@@ -95,12 +99,13 @@ const TERMINATION: Record<string, string> = {
   fifty_moves: '50-Züge-Regel',
   declined: 'abgelehnt',
   cancelled: 'zurückgezogen',
+  no_first_move: 'abgebrochen – kein erster Zug',
 };
 
 /** Result line from the viewer's perspective, e.g. "Du gewinnst – Schachmatt". */
 export function resultText(g: GameRow, me: string | undefined): string {
   const why = g.termination ? TERMINATION[g.termination] ?? g.termination : '';
-  if (g.status === 'aborted') return `Herausforderung ${why}`;
+  if (g.status === 'aborted') return g.termination === 'no_first_move' ? `Partie ${why}` : `Herausforderung ${why}`;
   if (!g.result) return '';
   if (g.result === '1/2-1/2') return `Remis – ${why}`;
   const winner = g.result === '1-0' ? g.white_id : g.black_id;

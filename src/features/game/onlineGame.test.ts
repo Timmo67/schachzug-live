@@ -5,7 +5,7 @@ const game: GameRow = {
   id: 'g1', status: 'finished', white_id: 'w', black_id: 'b', created_by: 'w', time_control: '3+2',
   fen: '', moves_uci: ['f2f3', 'e7e5', 'g2g4', 'd8h4'], base_ms: 180_000, increment_ms: 2_000,
   white_ms_left: 1, black_ms_left: 1, last_move_at: null, result: '0-1', termination: 'checkmate',
-  draw_offer_by: null, version: 5, created_at: '2026-10-10T12:00:00Z', finished_at: null,
+  draw_offer_by: null, version: 5, created_at: '2026-10-10T12:00:00Z', finished_at: null, kind: 'friend',
 };
 
 describe('online game helpers', () => {
