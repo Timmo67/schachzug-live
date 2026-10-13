@@ -52,7 +52,7 @@ Jeder Meilenstein endet mit einer lauffähigen Version und einer kurzen deutsche
 ## Ideen des Auftraggebers (11.10.2026, nach erstem Test)
 - **Partieanalyse** (Plus, gratis 1/Tag): Engine-Bewertung jeder Partie, Fehler/Patzer markieren. – erledigt 13.10.2026 (Online-Partien).
 - **Persönliches Training** (Plus): nach ca. 10 Partien Spielstärke schätzen und passende Lektionen vorschlagen.
-- **Rätsel** (Plus): Taktikaufgaben passend zur Spielstärke.
+- **Rätsel** (Plus): Taktikaufgaben passend zur Spielstärke. – erledigt 13.10.2026 (2.505 lichess-Rätsel, eigene Rätsel-Wertung).
 - **Zufallsgegner** (auch gratis): Partie gegen Fremde, **ohne Video** (Kernregel 4, Minderjährigenschutz).
 - **Einführungsangebot** (M4): z. B. die ersten 100 Nutzer bekommen ein halbes Jahr Plus gratis.
 - Benachrichtigungen bei weiteren Tests verfeinern (Ton ist abschaltbar, Standard aus). – Zuverlässigkeit nach Handy-Sperre verbessert 12.10.2026.
