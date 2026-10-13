@@ -5,3 +5,4 @@
 .puzzlestats .delta.up { color: var(--ok); }
 .puzzlestats .delta.down { color: var(--check); }
 .status.bad { color: var(--check); }
+.lessonhead { font-size: .95rem; }

@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import type { PieceSymbol, Square } from 'chess.js';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { Board } from '../game/Board';
 import { localSan, tryMove } from '../game/chessRules';
+import { lessonById } from '../training/trainingLogic';
 import { isCorrect, playerColor, positionAt, themeNames, type Puzzle } from './puzzleLogic';
 import './puzzles.css';
 
 type Stats = { rating: number; solved: number; failed: number; streak: number; plus: boolean; remaining_today: number | null };
-type Phase = 'loading' | 'playing' | 'wrong' | 'solved' | 'revealed' | 'locked' | 'empty' | 'error';
+type Phase = 'loading' | 'playing' | 'wrong' | 'solved' | 'revealed' | 'locked' | 'dailyDone' | 'empty' | 'error';
 
 const OPPONENT_DELAY = 500;
 
 /** Tactics puzzles near the player's rating (Plus). The server hands out puzzles and keeps the rating. */
 export function PuzzlePage() {
   const { session, ready } = useAuth();
+  const [params] = useSearchParams();
+  const lesson = lessonById(params.get('lektion'));
+  const lessonThemes = lesson?.themes.join(',') ?? null;
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [ply, setPly] = useState(0);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -34,10 +38,15 @@ export function PuzzlePage() {
     if (!supabase) return;
     clearTimeout(timer.current);
     setPhase('loading'); setDelta(null); setFailedOnce(false); setPly(0);
-    const { data, error } = await supabase.rpc('next_puzzle');
+    const { data, error } = lessonThemes
+      ? await supabase.rpc('next_training_puzzle', { p_themes: lessonThemes.split(',') })
+      : await supabase.rpc('next_puzzle');
     if (error) {
       setPuzzle(null);
-      setPhase(error.message.includes('puzzle_requires_plus') ? 'locked' : error.message.includes('no_puzzles_left') ? 'empty' : 'error');
+      const m = error.message;
+      setPhase(m.includes('training_requires_plus') ? 'locked' : m.includes('puzzle_requires_plus') ? 'dailyDone'
+        : m.includes('no_puzzles_left') ? 'empty' : 'error');
+      void loadStats();
       return;
     }
     const p = data as Puzzle;
@@ -45,7 +54,7 @@ export function PuzzlePage() {
     setPhase('playing');
     // The opponent's move that sets up the puzzle, shown after a short pause.
     timer.current = setTimeout(() => setPly(1), OPPONENT_DELAY);
-  }, []);
+  }, [lessonThemes, loadStats]);
 
   useEffect(() => {
     if (!session) return;
@@ -107,7 +116,8 @@ export function PuzzlePage() {
     wrong: 'Das war nicht der beste Zug.',
     solved: failedOnce ? 'Geschafft – im zweiten Anlauf.' : 'Richtig gelöst!',
     revealed: 'So geht die Lösung.',
-    locked: 'Rätsel gibt es mit Plus.',
+    locked: 'Training gibt es mit Plus.',
+    dailyDone: 'Dein Gratis-Rätsel für heute ist erledigt.',
     empty: 'Du hast alle Rätsel gelöst – Respekt!',
     error: 'Rätsel konnten nicht geladen werden.',
   };
@@ -136,10 +146,13 @@ export function PuzzlePage() {
 
       <aside className="panel">
         <h1>Rätsel</h1>
-        {phase === 'locked' ? (
+        {lesson && <p className="lessonhead" data-testid="lesson-title">Lektion: <b>{lesson.title}</b> · <Link to="/training">zurück zum Training</Link></p>}
+        {phase === 'locked' || phase === 'dailyDone' ? (
           <>
-            <p>Taktik-Rätsel passend zu deiner Spielstärke gibt es mit <b>Plus</b>.</p>
-            <Link className="btn primary" to="/">Mehr erfahren</Link>
+            <p>{phase === 'dailyDone'
+              ? 'Morgen wartet ein neues Gratis-Rätsel. Mit Plus löst du so viele Rätsel, wie du willst – passend zu deiner Spielstärke.'
+              : 'Persönliche Lektionen und Rätsel nach Thema gibt es mit Plus.'}</p>
+            <Link className="btn primary" to="/training">Zum Training</Link>
           </>
         ) : (
           <>
@@ -150,6 +163,7 @@ export function PuzzlePage() {
               <div><span className="lbl">Gelöst</span><b>{stats?.solved ?? 0}</b></div>
             </div>
             {puzzle && <p className="note">Rätsel-Schwierigkeit: {puzzle.rating}</p>}
+            {stats && !stats.plus && <p className="note" data-testid="puzzle-free">Gratis: 1 Rätsel pro Tag. Mit Plus unbegrenzt.</p>}
             {puzzle && done && themeNames(puzzle.themes).length > 0 && (
               <p className="note" data-testid="puzzle-themes">Motiv: {themeNames(puzzle.themes).join(' · ')}</p>
             )}

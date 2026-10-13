@@ -13,6 +13,7 @@ import { DesignPage } from '../features/appearance/DesignPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { FeedbackPage } from '../features/feedback/FeedbackPage';
 import { PuzzlePage } from '../features/puzzles/PuzzlePage';
+import { TrainingPage } from '../features/training/TrainingPage';
 import { LegalFooter, LegalPage } from '../features/legal/LegalPage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { HomePage } from './HomePage';
@@ -52,7 +53,7 @@ export function App() {
         <nav className="nav">
           <NavLink to="/spielen">Spielen</NavLink>
           {session && <NavLink to="/partien">Partien{badge > 0 && <span className="badge" data-testid="badge">{badge}</span>}</NavLink>}
-          {session && <NavLink to="/raetsel">Rätsel</NavLink>}
+          {session && <NavLink to="/training" className={({ isActive }) => (isActive || location.pathname === '/raetsel' ? 'active' : '')}>Training</NavLink>}
           {session && <NavLink to="/freunde">Freunde</NavLink>}
           {session ? <NavLink to="/profil">Profil</NavLink> : <NavLink to="/design">Design</NavLink>}
           {session ? (
@@ -76,6 +77,7 @@ export function App() {
             <Route path="/profil" element={<ProfilePage />} />
             <Route path="/feedback" element={<FeedbackPage />} />
             <Route path="/raetsel" element={<PuzzlePage />} />
+            <Route path="/training" element={<TrainingPage />} />
             <Route path="/lizenzen" element={<LicensesPage />} />
             <Route path="/impressum" element={<LegalPage slug="impressum" />} />
             <Route path="/datenschutz" element={<LegalPage slug="datenschutz" />} />

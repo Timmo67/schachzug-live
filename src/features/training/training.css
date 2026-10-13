@@ -1,0 +1,10 @@
+.phasegrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.phasegrid > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.phasegrid b { font-family: var(--f-display); font-size: 1.2rem; }
+.phasegrid .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 480px) { .phasegrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lessons { display: flex; flex-direction: column; gap: 10px; }
+.lesson { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.lesson h3 { margin: 0; font-family: var(--f-display); font-size: 1.05rem; }
+.lesson .reason { font-weight: 600; }
+[data-testid="training"] progress { width: 100%; accent-color: var(--accent); }

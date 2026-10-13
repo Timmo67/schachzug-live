@@ -558,15 +558,20 @@ test('puzzles: solve one (opponent answers in between), fail one and see the sol
   expect(att2!.solved).toBe(false);
 });
 
-test('puzzles: Plus only, solutions never readable, each puzzle counts once', async ({ browser }) => {
+test('puzzles: one free puzzle a day, Plus unlimited, solutions never readable, each puzzle counts once', async ({ browser }) => {
   const free = await makeUser('Free');
   const plus = await makeUser('Plus', true);
   const as = (s: { access_token: string } | null) =>
     createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${s!.access_token}` } } });
+  // Free: themed training is Plus only, one regular puzzle per day.
+  expect((await as(free.session).rpc('next_training_puzzle', { p_themes: ['fork'] })).error?.message).toContain('training_requires_plus');
+  const { data: daily, error: dailyErr } = await as(free.session).rpc('next_puzzle');
+  expect(dailyErr).toBeNull();
+  expect((await as(free.session).rpc('submit_puzzle', { p_puzzle: daily.id, p_solved: false })).error).toBeNull();
   expect((await as(free.session).rpc('next_puzzle')).error?.message).toContain('puzzle_requires_plus');
   const page = await signedInPage(browser, free.session);
   await page.goto('/raetsel');
-  await expect(page.getByTestId('puzzle-status')).toHaveText('Rätsel gibt es mit Plus.');
+  await expect(page.getByTestId('puzzle-status')).toHaveText('Dein Gratis-Rätsel für heute ist erledigt.');
 
   expect((await as(plus.session).from('puzzles').select('id').limit(1)).data).toEqual([]);
   const { data: p, error } = await as(plus.session).rpc('next_puzzle');
@@ -578,4 +583,55 @@ test('puzzles: Plus only, solutions never readable, each puzzle counts once', as
   expect((await as(plus.session).rpc('submit_puzzle', { p_puzzle: 'never-handed-out', p_solved: true })).error?.message).toContain('puzzle_not_open');
   const { data: s } = await as(plus.session).rpc('puzzle_status');
   expect(s).toMatchObject({ solved: 1, failed: 0, streak: 1, plus: true });
+});
+
+/**
+ * A finished game where the player (Black) leaves a pawn hanging at move 9: 22 plies, evaluations made up so
+ * the mistake is clear (the opponent's best reply captures).
+ */
+const TRAINING_MOVES = [
+  'g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8',
+  'e2e4', 'd7d5', 'e4d5', 'd8d5', 'b1c3', 'd5a5',
+];
+const TRAINING_EVALS = TRAINING_MOVES.map(() => ({ cp: 0 })).concat([{ cp: 0 }]) as Array<{ cp: number; best?: string }>;
+TRAINING_EVALS[17] = { cp: 0, best: 'e7e5' };
+TRAINING_EVALS[18] = { cp: 300, best: 'e4d5' };
+
+test('training: unlocks after 10 games, analyses missing games and suggests lessons for typical mistakes', async ({ browser }) => {
+  test.setTimeout(180_000);
+  const anna = await makeUser('Anna', true);
+  const ben = await makeUser('Ben', true);
+  const addGames = async (n: number, analysed: boolean) => {
+    for (let i = 0; i < n; i++) {
+      const { data: g, error } = await admin.from('games').insert({
+        white_id: ben.id, black_id: anna.id, created_by: ben.id, status: 'finished', moves_uci: TRAINING_MOVES,
+        result: '1-0', termination: 'resign', finished_at: new Date().toISOString(),
+      }).select('id').single();
+      expect(error).toBeNull();
+      if (analysed) await admin.from('game_analyses').insert({ game_id: g!.id, user_id: anna.id, evals: TRAINING_EVALS });
+    }
+  };
+  await addGames(9, true);
+
+  const a = await signedInPage(browser, anna.session);
+  await a.goto('/');
+  await expect(a.getByTestId('training-hint')).toContainText('startet nach 10 Partien – noch 1');
+  await a.getByRole('link', { name: 'Training' }).first().click();
+  await expect(a.getByTestId('training-progress')).toContainText('9 von 10 Partien – noch eine Partie');
+
+  // The 10th game has no analysis yet: the training page runs the engine on it first.
+  await addGames(1, false);
+  await a.reload();
+  await expect(a.getByTestId('lessons')).toBeVisible({ timeout: 120_000 });
+  await expect(a.getByTestId('lessons').locator('h3').first()).toHaveText('1. Ungedeckte Figuren');
+  await expect(a.getByTestId('lessons')).toContainText(/In deinen letzten 10 Partien hast du (9|10) Mal/);
+  expect((await admin.from('game_analyses').select('game_id', { count: 'exact', head: true }).eq('user_id', anna.id)).count).toBe(10);
+
+  // Practising a lesson hands out puzzles with that motif.
+  await a.getByRole('link', { name: 'Üben' }).first().click();
+  await expect(a.getByTestId('lesson-title')).toContainText('Ungedeckte Figuren');
+  await expect(a.getByTestId('puzzle-status')).toContainText('Finde den besten Zug');
+  const { data: open } = await admin.from('puzzle_attempts').select('puzzle_id').eq('user_id', anna.id).is('solved', null).single();
+  const { data: pz } = await admin.from('puzzles').select('themes').eq('id', open!.puzzle_id).single();
+  expect(pz!.themes.some((t: string) => ['hangingPiece', 'trappedPiece'].includes(t))).toBe(true);
 });
