@@ -451,3 +451,69 @@ test('login with the code from the e-mail (for home-screen apps and other device
   await expect(page.getByRole('heading', { name: /Hallo Anna/ })).toBeVisible();
   await expect(page.getByTestId('homescreen-hint')).toBeVisible();
 });
+
+test('analysis: Stockfish finds the blunder and the better move, result is stored', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const { anna, ben, gameId } = await runningGame();
+  const asUser = (s: { access_token: string } | null) =>
+    createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${s!.access_token}` } } });
+  // Scholar's mate: 1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6?? 4. Qxf7#
+  const plies: Array<[typeof anna, string]> = [[anna, 'e2e4'], [ben, 'e7e5'], [anna, 'f1c4'], [ben, 'b8c6'], [anna, 'd1h5'], [ben, 'g8f6'], [anna, 'h5f7']];
+  for (const [u, uci] of plies) {
+    const { error } = await asUser(u.session).functions.invoke('make-move', { body: { gameId, uci } });
+    expect(error).toBeNull();
+  }
+
+  const b = await signedInPage(browser, ben.session);
+  await b.goto(`/partie/${gameId}`);
+  await expect(b.getByTestId('status')).toContainText('Schachmatt');
+  await b.getByRole('button', { name: 'Partie analysieren' }).click();
+  await expect(b.getByTestId('keymoves')).toContainText('Nf6', { timeout: 60_000 });
+  await expect(b.getByTestId('keymoves')).toContainText('??');
+  await b.getByTestId('keymoves').getByRole('button', { name: /Nf6/ }).click();
+  await expect(b.getByTestId('move-comment')).toContainText('Patzer');
+  await expect(b.getByTestId('move-comment')).toContainText('Besser war');
+  // The board shows the position before the mate: the black knight stands on f6, the queen still on h5.
+  await expect(b.locator('[data-square="f6"] .pc')).toHaveCount(1);
+  await expect(b.locator('[data-square="h5"] .pc')).toHaveCount(1);
+
+  const { data } = await admin.from('game_analyses').select('evals').eq('game_id', gameId).eq('user_id', ben.id).single();
+  expect((data!.evals as unknown[]).length).toBe(8);
+  // Opening the game again shows the stored analysis right away.
+  await b.reload();
+  await expect(b.getByTestId('accuracy-b')).toContainText('%');
+});
+
+test('analysis: free players get one per day, Plus is unlimited, only own finished games', async () => {
+  const anna = await makeUser('Anna');
+  const ben = await makeUser('Ben', true);
+  await admin.from('friendships').insert({ requester_id: anna.id, addressee_id: ben.id, status: 'accepted' });
+  const as = (s: { access_token: string } | null) =>
+    createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${s!.access_token}` } } });
+  const finishedGame = async () => {
+    const { data: id } = await as(anna.session).rpc('create_game', { p_opponent: ben.id, p_time_control: 'none', p_color: 'w' });
+    await as(ben.session).rpc('respond_game', { p_game: id, p_action: 'accept' });
+    return id as string;
+  };
+  const g1 = await finishedGame();
+  // Not finished yet: no analysis.
+  expect((await as(anna.session).rpc('begin_analysis', { p_game: g1 })).error?.message).toContain('game_not_found');
+  await as(anna.session).rpc('game_action', { p_game: g1, p_action: 'resign' });
+  const g2 = await finishedGame();
+  await as(anna.session).rpc('game_action', { p_game: g2, p_action: 'resign' });
+
+  expect((await as(anna.session).rpc('analysis_status')).data).toEqual({ unlimited: false, remaining: 1 });
+  expect((await as(anna.session).rpc('begin_analysis', { p_game: g1 })).error).toBeNull();
+  expect((await as(anna.session).rpc('begin_analysis', { p_game: g2 })).error?.message).toContain('analysis_limit');
+  // Re-opening the same game is free.
+  expect((await as(anna.session).rpc('begin_analysis', { p_game: g1 })).error).toBeNull();
+  // Ben (Plus) analyses both.
+  expect((await as(ben.session).rpc('begin_analysis', { p_game: g1 })).error).toBeNull();
+  expect((await as(ben.session).rpc('begin_analysis', { p_game: g2 })).error).toBeNull();
+  // Results must match the game and can't be written directly.
+  expect((await as(anna.session).rpc('save_analysis', { p_game: g1, p_evals: [{ cp: 0 }, { cp: 5 }] })).error?.message).toContain('invalid_analysis');
+  expect((await as(anna.session).rpc('save_analysis', { p_game: g1, p_evals: [{ cp: 0 }] })).error).toBeNull();
+  expect((await as(anna.session).from('game_analyses').insert({ game_id: g2, user_id: anna.id, evals: [] })).error).toBeTruthy();
+  // Nobody sees other people's analyses.
+  expect((await as(anna.session).from('game_analyses').select('user_id')).data).toEqual([{ user_id: anna.id }]);
+});

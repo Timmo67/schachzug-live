@@ -15,6 +15,7 @@ import { FeedbackPage } from '../features/feedback/FeedbackPage';
 import { LegalFooter, LegalPage } from '../features/legal/LegalPage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { HomePage } from './HomePage';
+import { LicensesPage } from './LicensesPage';
 
 const PLAN_LABEL: Record<string, string> = { free: 'Basis', plus: 'Plus', pro: 'Pro', family: 'Familie', club: 'Verein' };
 const planLabel = (plan: string | undefined, source: string | undefined) => (source === 'beta' ? 'Beta' : PLAN_LABEL[plan ?? 'free']);
@@ -72,6 +73,7 @@ export function App() {
             <Route path="/design" element={<DesignPage />} />
             <Route path="/profil" element={<ProfilePage />} />
             <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/lizenzen" element={<LicensesPage />} />
             <Route path="/impressum" element={<LegalPage slug="impressum" />} />
             <Route path="/datenschutz" element={<LegalPage slug="datenschutz" />} />
             <Route path="/agb" element={<LegalPage slug="agb" />} />

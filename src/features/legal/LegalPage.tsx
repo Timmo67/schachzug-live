@@ -101,6 +101,7 @@ export function LegalFooter({ extra }: { extra?: ReactNode }) {
       <Link to="/agb">AGB</Link>
       <Link to="/widerruf">Widerruf</Link>
       <Link to="/nutzungsbedingungen">Nutzungsbedingungen</Link>
+      <Link to="/lizenzen">Lizenzen</Link>
     </footer>
   );
 }

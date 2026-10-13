@@ -1,0 +1,16 @@
+.analysis { display: flex; flex-direction: column; gap: 10px; }
+.analysis progress { width: 100%; accent-color: var(--accent); }
+.analysis .accuracy { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.analysis .accuracy > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+.analysis .accuracy b { font-family: var(--f-display); font-size: 1.4rem; }
+.evalgraph { width: 100%; height: 80px; cursor: pointer; border-radius: 8px; background: #2a3138; }
+.evalgraph .adv { fill: #eef1f3; }
+.evalgraph .mid { stroke: var(--muted); stroke-width: .3; vector-effect: non-scaling-stroke; }
+.evalgraph .cursor { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.analysis .nav button { flex: 1; }
+.keymoves { max-height: 220px; overflow: auto; }
+.keymoves .item { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; }
+.keymoves .item.on { border-color: var(--accent); }
+.j-inaccuracy { color: #c99a1a; margin-left: 2px; }
+.j-mistake { color: var(--warn); margin-left: 2px; }
+.j-blunder { color: var(--check); margin-left: 2px; }
