@@ -96,7 +96,7 @@ test('two friends play a full game with clock, chat and a reload in the middle',
 
   await expect(a.getByTestId('status')).toHaveText('Du gewinnst – Schachmatt');
   await expect(b.getByTestId('status')).toHaveText('Du verlierst – Schachmatt');
-  await expect(b.getByTestId('moves')).toContainText('Qxf7#');
+  await expect(b.getByTestId('move-table')).toContainText('Qxf7#');
 
   // The server stored the game; it shows up in the archive.
   await b.goto('/partien');
@@ -473,9 +473,20 @@ test('analysis: Stockfish finds the blunder and the better move, result is store
   await b.getByTestId('keymoves').getByRole('button', { name: /Nf6/ }).click();
   await expect(b.getByTestId('move-comment')).toContainText('Patzer');
   await expect(b.getByTestId('move-comment')).toContainText('Besser war');
+  await expect(b.getByTestId('move-comment')).toContainText('mattsetzen');
+  await expect(b.getByTestId('best-arrow')).toBeVisible();
   // The board shows the position before the mate: the black knight stands on f6, the queen still on h5.
   await expect(b.locator('[data-square="f6"] .pc')).toHaveCount(1);
   await expect(b.locator('[data-square="h5"] .pc')).toHaveCount(1);
+  // Arrow keys step through the game; the mating move is graded and explained, White is a pawn up.
+  await b.keyboard.press('ArrowRight');
+  await expect(b.getByTestId('move-comment')).toContainText('Schachmatt!');
+  await expect(b.getByTestId('best-arrow')).toHaveCount(0);
+  await expect(b.getByTestId('lead-w')).toHaveText('+1');
+  await b.keyboard.press('ArrowLeft');
+  await b.keyboard.press('ArrowLeft');
+  await expect(b.getByTestId('ply')).toHaveText('3.');
+  await expect(b.getByTestId('move-table').locator('.mv.on')).toContainText('Qh5');
 
   const { data } = await admin.from('game_analyses').select('evals').eq('game_id', gameId).eq('user_id', ben.id).single();
   expect((data!.evals as unknown[]).length).toBe(8);

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as Rea
 import type { Chess, Color, PieceSymbol, Square } from 'chess.js';
 import { useDesign } from '../appearance/useDesign';
 import { pieceUrl } from '../appearance/designs';
-import { FILES, GLYPH, VS15, kingInCheckSquare, needsPromotion } from './chessRules';
+import { FILES, GLYPH, VS15, captured, kingInCheckSquare, materialLead, needsPromotion } from './chessRules';
 import './board.css';
 
 type Props = {
@@ -14,6 +14,8 @@ type Props = {
   onMove: (from: Square, to: Square, promotion?: PieceSymbol) => void;
   /** Called when the user taps while not allowed to move (e.g. to show a hint). */
   onBlocked?: () => void;
+  /** Arrow for a suggested move (UCI), e.g. the engine's better move in the analysis. */
+  arrow?: string | null;
 };
 
 const PROMO: PieceSymbol[] = ['q', 'r', 'b', 'n'];
@@ -34,7 +36,7 @@ function squareAt(x: number, y: number): Square | null {
   return (el?.dataset.square as Square | undefined) ?? null;
 }
 
-export function Board({ game, orientation, interactive, lastMove, onMove, onBlocked }: Props) {
+export function Board({ game, orientation, interactive, lastMove, onMove, onBlocked, arrow }: Props) {
   const [sel, setSel] = useState<Square | null>(null);
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
@@ -138,6 +140,7 @@ export function Board({ game, orientation, interactive, lastMove, onMove, onBloc
     <div className="boardbox">
       <div className={`board${interactive ? ' live' : ''}`} role="grid" aria-label="Schachbrett" style={boardStyle}
         data-design={`${design.board.id}/${set}`}>{squares}</div>
+      {arrow && <Arrow uci={arrow} flip={flip} />}
       {drag?.active && (() => {
         const p = game.get(drag.from);
         return p && (
@@ -162,5 +165,35 @@ export function Board({ game, orientation, interactive, lastMove, onMove, onBloc
         </div>
       )}
     </div>
+  );
+}
+
+/** Arrow from one square to another over the board (board units: one square = 1). */
+function Arrow({ uci, flip }: { uci: string; flip: boolean }) {
+  const at = (sq: string) => {
+    const f = FILES.indexOf(sq[0]), r = Number(sq[1]) - 1;
+    return flip ? { x: 7 - f + 0.5, y: r + 0.5 } : { x: f + 0.5, y: 7 - r + 0.5 };
+  };
+  const a = at(uci.slice(0, 2)), b = at(uci.slice(2, 4));
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  if (!len) return null;
+  // Stop short of the target centre so the head sits on the square.
+  const ex = b.x - ((b.x - a.x) / len) * 0.35, ey = b.y - ((b.y - a.y) / len) * 0.35;
+  return (
+    <svg className="arrow" viewBox="0 0 8 8" aria-hidden="true" data-testid="best-arrow">
+      <defs><marker id="arrowhead" markerWidth="3" markerHeight="3" refX="1.2" refY="1.5" orient="auto"><path d="M0,0 L3,1.5 L0,3 z" /></marker></defs>
+      <line x1={a.x} y1={a.y} x2={ex} y2={ey} markerEnd="url(#arrowhead)" />
+    </svg>
+  );
+}
+
+/** Pieces a side has captured, plus its material lead in points (e.g. "+3") when it is ahead. */
+export function Captures({ game, color }: { game: Chess; color: Color }) {
+  const lead = materialLead(game)[color];
+  return (
+    <span className="caps">
+      {captured(game)[color]}
+      {lead > 0 && <span className="lead" data-testid={`lead-${color}`} title={`${lead} Punkte mehr Material`}>+{lead}</span>}
+    </span>
   );
 }

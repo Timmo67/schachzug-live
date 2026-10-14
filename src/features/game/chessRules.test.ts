@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Chess } from 'chess.js';
-import { captured, fromUci, kingInCheckSquare, localSan, movePairs, needsPromotion, result, statusText, tryMove } from './chessRules';
+import { captured, material, materialLead, fromUci, kingInCheckSquare, localSan, movePairs, needsPromotion, result, statusText, tryMove } from './chessRules';
 
 const SCHOLARS = ['e2e4', 'e7e5', 'f1c4', 'b8c6', 'd1h5', 'g8f6', 'h5f7'];
 
@@ -33,6 +33,13 @@ describe('chessRules', () => {
     expect(tryMove(p, 'a7', 'a8', 'n')).toBe('a7a8n');
     const s = new Chess('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1');
     expect(result(s)?.text).toBe('Remis durch Patt');
+  });
+
+  it('shows the material lead in points', () => {
+    expect(material(new Chess())).toEqual({ w: 39, b: 39 });
+    // 1. e4 d5 2. exd5 Nf6 3. Bb5+ c6 4. dxc6 Qd7 5. cxd7+: White has won two pawns and the queen.
+    const g = fromUci(['e2e4', 'd7d5', 'e4d5', 'g8f6', 'f1b5', 'c7c6', 'd5c6', 'd8d7', 'c6d7'])!;
+    expect(materialLead(g)).toEqual({ w: 11, b: 0 });
   });
 
   it('counts captured pieces', () => {

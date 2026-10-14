@@ -39,7 +39,9 @@ export class Engine {
     for (const l of lines) { const p = parseInfo(l); if (p) last = p; }
     const best = /^bestmove (\S+)/.exec(lines.at(-1) ?? '')?.[1];
     const score = last ? toWhite(last, side) : { cp: 0 };
-    return { ...score, best: best && best !== '(none)' ? best : undefined };
+    const move = best && best !== '(none)' ? best : undefined;
+    const pv = move && last?.line?.[0] === move ? last.line : undefined;
+    return { ...score, best: move, ...(pv ? { pv } : {}) };
   }
 
   /** Tells the engine a new game starts (clears its hash). */

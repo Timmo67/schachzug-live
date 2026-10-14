@@ -49,8 +49,8 @@ describe('analysis logic', () => {
     expect(evalText({ cp: -40 })).toBe('−0.4');
     expect(evalText({ mate: -2 })).toBe('#−2');
     expect(evalText({ cp: -10_000 })).toBe('#');
-    expect(parseInfo('info depth 12 seldepth 18 multipv 1 score cp -35 nodes 1 pv e7e5 g1f3')).toEqual({ depth: 12, cp: -35, pv: 'e7e5' });
-    expect(parseInfo('info depth 9 score mate 2 pv h5f7')).toEqual({ depth: 9, mate: 2, pv: 'h5f7' });
+    expect(parseInfo('info depth 12 seldepth 18 multipv 1 score cp -35 nodes 1 pv e7e5 g1f3')).toEqual({ depth: 12, cp: -35, pv: 'e7e5', line: ['e7e5', 'g1f3'] });
+    expect(parseInfo('info depth 9 score mate 2 pv h5f7')).toEqual({ depth: 9, mate: 2, pv: 'h5f7', line: ['h5f7'] });
     expect(parseInfo('info string NNUE evaluation')).toBeNull();
   });
 });
