@@ -12,6 +12,9 @@ test('local game: scholar\'s mate ends the game', async ({ page }) => {
   }
   await expect(page.getByTestId('status')).toHaveText('Schachmatt – Weiß gewinnt');
   await expect(page.getByTestId('moves')).toContainText('Qxf7#');
+  // White has taken a pawn: one point more material.
+  await expect(page.getByTestId('lead-w')).toHaveText('+1');
+  await expect(page.getByTestId('lead-b')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Aufgeben' })).toBeDisabled();
 });
 

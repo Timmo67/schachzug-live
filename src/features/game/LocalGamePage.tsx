@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Color, PieceSymbol, Square } from 'chess.js';
-import { Board } from './Board';
-import { captured, fromUci, movePairs, result, statusText, tryMove } from './chessRules';
+import { Board, Captures } from './Board';
+import { fromUci, movePairs, result, statusText, tryMove } from './chessRules';
 
 /** Pass-and-play on one device. Online play (M2) reuses Board and chessRules. */
 export function LocalGamePage() {
@@ -13,7 +13,6 @@ export function LocalGamePage() {
 
   const game = fromUci(moves)!;
   const res = result(game, resigned);
-  const caps = captured(game);
   const bottom: Color = flipped ? 'b' : 'w';
   const top: Color = bottom === 'w' ? 'b' : 'w';
 
@@ -34,12 +33,12 @@ export function LocalGamePage() {
       <div className="boardcol">
         <div className="pbar">
           <div className="pname"><i className={`swatch ${top}`} />{top === 'w' ? 'Weiß' : 'Schwarz'}</div>
-          <span className="caps">{caps[top]}</span>
+          <Captures game={game} color={top} />
         </div>
         <Board game={game} orientation={bottom} interactive={!res} lastMove={moves.at(-1)} onMove={onMove} />
         <div className="pbar">
           <div className="pname"><i className={`swatch ${bottom}`} />{bottom === 'w' ? 'Weiß' : 'Schwarz'}</div>
-          <span className="caps">{caps[bottom]}</span>
+          <Captures game={game} color={bottom} />
         </div>
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div className={`status${res ? ' end' : ''}`} aria-live="polite" data-testid="status">{statusText(game, resigned)}</div>

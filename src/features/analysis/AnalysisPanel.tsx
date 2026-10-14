@@ -1,10 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { localSan } from '../game/chessRules';
-import {
-  JUDGEMENT_SYMBOL, JUDGEMENT_TEXT, cpOf, evalText, reviewMoves, summarize, type Eval,
-} from './analysisLogic';
+import { cpOf, evalText, reviewMoves, summarize, type Eval } from './analysisLogic';
+import { CLASS_SYMBOL, CLASS_TEXT, explainMove, type MoveClass } from './explainLogic';
 import { positions, type AnalysisState } from './useAnalysis';
 import './analysis.css';
 
@@ -42,13 +41,68 @@ function EvalGraph({ evals, ply, onSelect }: { evals: Eval[]; ply: number; onSel
   );
 }
 
+/** Buttons to step through the game (also with the arrow keys). */
+function Nav({ ply, last, onSelect }: { ply: number; last: number; onSelect: (p: number) => void }) {
+  return (
+    <div className="row nav">
+      <button type="button" aria-label="Zum Anfang" disabled={ply === 0} onClick={() => onSelect(0)}>⏮</button>
+      <button type="button" aria-label="Zurück" disabled={ply === 0} onClick={() => onSelect(Math.max(0, ply - 1))}>◀</button>
+      <span className="pos mono" data-testid="ply">{ply === 0 ? 'Start' : `${Math.ceil(ply / 2)}${ply % 2 ? '.' : '…'}`}</span>
+      <button type="button" aria-label="Weiter" disabled={ply === last} onClick={() => onSelect(Math.min(last, ply + 1))}>▶</button>
+      <button type="button" aria-label="Zum Ende" disabled={ply === last} onClick={() => onSelect(last)}>⏭</button>
+    </div>
+  );
+}
+
+/** Every move of the game, clickable; with grades once the analysis is done. */
+function MoveTable({ sans, classes, ply, onSelect }: { sans: string[]; classes: MoveClass[] | null; ply: number; onSelect: (p: number) => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    box.current?.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+  }, [ply]);
+  const cell = (i: number) => {
+    if (i >= sans.length) return <span />;
+    const cls = classes?.[i];
+    return (
+      <button type="button" className={`mv${ply === i + 1 ? ' on' : ''}${cls ? ` c-${cls}` : ''}`} onClick={() => onSelect(i + 1)}
+        title={cls ? CLASS_TEXT[cls] : undefined}>
+        {sans[i]}{cls && CLASS_SYMBOL[cls] && <b>{CLASS_SYMBOL[cls]}</b>}
+      </button>
+    );
+  };
+  const rows = [];
+  for (let i = 0; i < sans.length; i += 2) {
+    rows.push(<span key={i} style={{ display: 'contents' }}><span className="n">{i / 2 + 1}.</span>{cell(i)}{cell(i + 1)}</span>);
+  }
+  return <div className="movetable" ref={box} data-testid="move-table">{rows}</div>;
+}
+
 export function AnalysisPanel({ moves, state, remaining, onStart, ply, onSelect, names }: Props) {
   const fens = useMemo(() => positions(moves), [moves]);
-  const evals = state.kind === 'done' ? state.evals : null;
+  const sans = useMemo(() => moves.map((m, i) => san(fens[i], m)), [moves, fens]);
+  const evals = state.kind === 'done' && state.evals.length === moves.length + 1 ? state.evals : null;
   const reviews = useMemo(() => (evals ? reviewMoves(evals, moves) : []), [evals, moves]);
   const sum = useMemo(() => summarize(reviews), [reviews]);
+  const nameW = names.w, nameB = names.b;
+  const explained = useMemo(
+    () => (evals ? reviews.map((r, i) => explainMove(fens[i], moves[i], evals[i], evals[i + 1], r, { w: nameW, b: nameB })) : null),
+    [evals, reviews, fens, moves, nameW, nameB],
+  );
+  const classes = explained?.map((e) => e.cls) ?? null;
 
-  if (!evals) {
+  // Arrow keys step through the moves (not while typing in the chat).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); onSelect(Math.max(0, ply - 1)); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); onSelect(Math.min(moves.length, ply + 1)); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ply, moves.length, onSelect]);
+
+  if (!evals || !explained) {
     return (
       <section className="analysis" data-testid="analysis">
         <h2>Analyse</h2>
@@ -59,17 +113,23 @@ export function AnalysisPanel({ moves, state, remaining, onStart, ply, onSelect,
           </>
         ) : (
           <>
-            <p className="note">Die Schach-Engine Stockfish zeigt dir Fehler, Patzer und bessere Züge – direkt auf deinem Gerät.</p>
+            <p className="note">Die Schach-Engine Stockfish bewertet jeden Zug und erklärt Fehler und bessere Züge – direkt auf deinem Gerät.</p>
             <button type="button" className="primary" onClick={onStart}>Partie analysieren</button>
             {remaining !== null && <p className="note">Gratis: noch {remaining} Analyse heute. Mit Plus unbegrenzt.</p>}
             {state.kind === 'error' && <p className="error" role="alert">{state.text}</p>}
           </>
         )}
+        <span className="lbl">Partie nachspielen</span>
+        <Nav ply={ply} last={moves.length} onSelect={onSelect} />
+        <MoveTable sans={sans} classes={null} ply={ply} onSelect={onSelect} />
       </section>
     );
   }
 
   const current = ply > 0 ? reviews[ply - 1] : null;
+  const info = ply > 0 ? explained[ply - 1] : null;
+  const count = (c: 'w' | 'b', k: MoveClass) => explained.filter((e, i) => reviews[i].color === c && e.cls === k).length;
+  const key = reviews.filter((r) => r.judgement);
   return (
     <section className="analysis" data-testid="analysis">
       <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -82,35 +142,48 @@ export function AnalysisPanel({ moves, state, remaining, onStart, ply, onSelect,
             <span className="lbl">{names[c]}</span>
             <b>{sum[c].accuracy} %</b>
             <span className="note">Genauigkeit</span>
-            <span className="note">{sum[c].inaccuracy} ?! · {sum[c].mistake} ? · {sum[c].blunder} ??</span>
+            <span className="note counts">
+              <span className="c-best">★ {count(c, 'best')}</span>
+              <span className="c-inaccuracy">?! {sum[c].inaccuracy}</span>
+              <span className="c-mistake">? {sum[c].mistake}</span>
+              <span className="c-blunder">?? {sum[c].blunder}</span>
+            </span>
           </div>
         ))}
       </div>
       <EvalGraph evals={evals} ply={ply} onSelect={onSelect} />
-      <div className="row nav">
-        <button type="button" aria-label="Zum Anfang" onClick={() => onSelect(0)}>⏮</button>
-        <button type="button" aria-label="Zurück" onClick={() => onSelect(Math.max(0, ply - 1))}>◀</button>
-        <button type="button" aria-label="Weiter" onClick={() => onSelect(Math.min(moves.length, ply + 1))}>▶</button>
-        <button type="button" aria-label="Zum Ende" onClick={() => onSelect(moves.length)}>⏭</button>
+      <Nav ply={ply} last={moves.length} onSelect={onSelect} />
+
+      <div className={`comment${info ? ` c-${info.cls}` : ''}`} data-testid="move-comment" aria-live="polite">
+        {current && info ? (
+          <>
+            <div className="head">
+              <b>{Math.ceil(current.ply / 2)}{current.color === 'w' ? '.' : '…'} {sans[current.ply - 1]}</b>
+              <span className={`badge c-${info.cls}`}>{CLASS_SYMBOL[info.cls] && `${CLASS_SYMBOL[info.cls]} `}{CLASS_TEXT[info.cls]}</span>
+            </div>
+            <span className="note">{names[current.color]} · Bewertung {evalText(evals[current.ply - 1])} → {evalText(evals[current.ply])}</span>
+            <ul>{info.lines.map((l) => <li key={l}>{l}</li>)}</ul>
+          </>
+        ) : (
+          <span className="note">Ausgangsstellung. Mit ▶ oder den Pfeiltasten gehst du Zug für Zug durch die Partie; jeder Zug wird bewertet und erklärt.</span>
+        )}
       </div>
-      {current && (
-        <p className="note" data-testid="move-comment">
-          {Math.ceil(current.ply / 2)}{current.color === 'w' ? '.' : '…'} {san(fens[current.ply - 1], moves[current.ply - 1])}
-          {current.judgement && <> – <b className={`j-${current.judgement}`}>{JUDGEMENT_TEXT[current.judgement]}</b></>}
-          {current.best && current.judgement && <>. Besser war <b>{san(fens[current.ply - 1], current.best)}</b>.</>}
-        </p>
-      )}
+
+      <span className="lbl">Alle Züge</span>
+      <MoveTable sans={sans} classes={classes} ply={ply} onSelect={onSelect} />
+
       <span className="lbl">Wichtige Momente</span>
       <div className="list keymoves" data-testid="keymoves">
-        {reviews.filter((r) => r.judgement).length === 0 && <p className="note">Keine groben Fehler – stark gespielt!</p>}
-        {reviews.filter((r) => r.judgement).map((r) => (
+        {key.length === 0 && <p className="note">Keine groben Fehler – stark gespielt!</p>}
+        {key.map((r) => (
           <button type="button" key={r.ply} className={`item${r.ply === ply ? ' on' : ''}`} onClick={() => onSelect(r.ply)}>
-            <span>{Math.ceil(r.ply / 2)}{r.color === 'w' ? '.' : '…'} {san(fens[r.ply - 1], moves[r.ply - 1])}<b className={`j-${r.judgement}`}>{JUDGEMENT_SYMBOL[r.judgement!]}</b></span>
+            <span>{Math.ceil(r.ply / 2)}{r.color === 'w' ? '.' : '…'} {sans[r.ply - 1]}<b className={`c-${r.judgement}`}>{CLASS_SYMBOL[r.judgement!]}</b></span>
             <span className="note">{names[r.color]}{r.best ? ` · besser ${san(fens[r.ply - 1], r.best)}` : ''}</span>
           </button>
         ))}
       </div>
-      <p className="note">Analyse mit <Link to="/lizenzen">Stockfish</Link> (GPLv3).</p>
+      <p className="note">Analyse mit <Link to="/lizenzen">Stockfish</Link> (GPLv3). Grüner Pfeil = besserer Zug.</p>
     </section>
   );
 }
+

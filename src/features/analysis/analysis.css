@@ -11,6 +11,21 @@
 .keymoves { max-height: 220px; overflow: auto; }
 .keymoves .item { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; }
 .keymoves .item.on { border-color: var(--accent); }
-.j-inaccuracy { color: #c99a1a; margin-left: 2px; }
-.j-mistake { color: var(--warn); margin-left: 2px; }
-.j-blunder { color: var(--check); margin-left: 2px; }
+.analysis .nav { align-items: center; }
+.analysis .nav .pos { min-width: 3.2em; text-align: center; color: var(--muted); }
+.analysis .counts { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Move grades */
+.c-best { --c: #2e8c46; } .c-excellent { --c: #4d9a5e; } .c-good { --c: var(--muted); } .c-forced { --c: var(--muted); }
+.c-inaccuracy { --c: #c99a1a; } .c-mistake { --c: var(--warn); } .c-blunder { --c: var(--check); }
+.counts > span, .keymoves b { color: var(--c); }
+.keymoves b { margin-left: 2px; }
+.comment { border: 1px solid var(--line); border-left: 4px solid var(--c, var(--line)); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-height: 64px; }
+.comment .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.comment .badge { color: #fff; background: var(--c); border-radius: 999px; padding: 2px 10px; font-size: .85rem; font-weight: 600; white-space: nowrap; }
+.comment.c-good .badge, .comment.c-forced .badge { background: var(--line); color: var(--ink); }
+.comment ul { margin: 2px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.movetable { display: grid; grid-template-columns: 2.4em 1fr 1fr; gap: 2px 4px; max-height: 220px; overflow: auto; align-items: center; }
+.movetable .n { color: var(--muted); font-size: .85rem; }
+.movetable .mv { justify-content: flex-start; text-align: left; padding: 3px 6px; border: 1px solid transparent; background: none; font: inherit; border-radius: 6px; }
+.movetable .mv b { color: var(--c); margin-left: 3px; }
+.movetable .mv.on { border-color: var(--accent); background: var(--surface); }

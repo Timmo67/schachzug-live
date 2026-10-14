@@ -1,7 +1,10 @@
 // Pure rules for game analysis (unit-tested). Engine scores are always stored from White's point of view.
 
-/** Engine result for one position: centipawns or mate in n (positive = White wins), plus the best move. */
-export type Eval = { cp?: number; mate?: number; best?: string };
+/**
+ * Engine result for one position: centipawns or mate in n (positive = White wins), the best move and the
+ * expected continuation starting with it (`pv`, a few UCI moves; missing in analyses stored before 14.10.2026).
+ */
+export type Eval = { cp?: number; mate?: number; best?: string; pv?: string[] };
 
 export type Judgement = 'inaccuracy' | 'mistake' | 'blunder';
 
@@ -94,15 +97,19 @@ export function evalText(e: Eval): string {
 export const JUDGEMENT_SYMBOL: Record<Judgement, string> = { inaccuracy: '?!', mistake: '?', blunder: '??' };
 export const JUDGEMENT_TEXT: Record<Judgement, string> = { inaccuracy: 'Ungenauigkeit', mistake: 'Fehler', blunder: 'Patzer' };
 
+/** Moves of the engine's main line kept per position (enough to explain a tactic). */
+export const PV_LENGTH = 6;
+
 /** Parses one UCI "info" line; returns depth and score (side to move's view), or null. */
-export function parseInfo(line: string): { depth: number; cp?: number; mate?: number; pv?: string } | null {
+export function parseInfo(line: string): { depth: number; cp?: number; mate?: number; pv?: string; line?: string[] } | null {
   if (!line.startsWith('info ') || !line.includes(' score ')) return null;
   if (/\bmultipv (?!1\b)\d+/.test(line)) return null;
   const depth = Number(/\bdepth (\d+)/.exec(line)?.[1] ?? 0);
   const cp = /\bscore cp (-?\d+)/.exec(line);
   const mate = /\bscore mate (-?\d+)/.exec(line);
-  const pv = /\bpv (\S+)/.exec(line)?.[1];
-  if (cp) return { depth, cp: Number(cp[1]), pv };
-  if (mate) return { depth, mate: Number(mate[1]), pv };
+  const moves = / pv (.+)$/.exec(line)?.[1].trim().split(/\s+/).slice(0, PV_LENGTH);
+  const pv = moves?.[0];
+  if (cp) return { depth, cp: Number(cp[1]), pv, line: moves };
+  if (mate) return { depth, mate: Number(mate[1]), pv, line: moves };
   return null;
 }

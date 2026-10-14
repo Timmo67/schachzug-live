@@ -76,6 +76,22 @@ export function captured(g: Chess): Record<Color, string> {
   return out;
 }
 
+/** Usual piece values (pawn 1, knight/bishop 3, rook 5, queen 9). */
+export const PIECE_VALUE: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+
+/** Material on the board per side in points. */
+export function material(g: Chess): Record<Color, number> {
+  const m = { w: 0, b: 0 };
+  for (const row of g.board()) for (const p of row) if (p) m[p.color] += PIECE_VALUE[p.type];
+  return m;
+}
+
+/** Material lead per side: the side ahead gets the difference, the other 0. */
+export function materialLead(g: Chess): Record<Color, number> {
+  const m = material(g);
+  return { w: Math.max(0, m.w - m.b), b: Math.max(0, m.b - m.w) };
+}
+
 export function kingInCheckSquare(g: Chess): Square | null {
   if (!g.inCheck()) return null;
   for (const row of g.board()) for (const p of row) if (p && p.type === 'k' && p.color === g.turn()) return p.square;

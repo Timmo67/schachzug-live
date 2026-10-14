@@ -68,3 +68,10 @@ export function useAnalysis(gameId: string, moves: string[], finished: boolean) 
 
   return { state, remaining, start };
 }
+
+/** The engine's better move for the move leading to `ply`, if the move played was not the best (for the board arrow). */
+export function betterMove(state: AnalysisState, moves: string[], ply: number): string | null {
+  if (state.kind !== 'done' || ply < 1 || state.evals.length !== moves.length + 1) return null;
+  const best = state.evals[ply - 1]?.best;
+  return best && best !== moves[ply - 1] ? best : null;
+}

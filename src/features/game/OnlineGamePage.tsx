@@ -8,9 +8,9 @@ import { useAuth } from '../auth/AuthProvider';
 import { Avatar } from '../profile/Avatar';
 import { VideoPanel } from '../video/VideoPanel';
 import { AnalysisPanel } from '../analysis/AnalysisPanel';
-import { useAnalysis } from '../analysis/useAnalysis';
-import { Board } from './Board';
-import { captured, fromUci, movePairs, tryMove } from './chessRules';
+import { betterMove, useAnalysis } from '../analysis/useAnalysis';
+import { Board, Captures } from './Board';
+import { fromUci, movePairs, tryMove } from './chessRules';
 import { clocksAt } from '../../../supabase/functions/_shared/gameLogic';
 import {
   createGame, downloadPgn, fetchGame, formatClock, gameAction, gameErrorText, respondGame, resultText, sendMove,
@@ -157,7 +157,6 @@ export function OnlineGamePage() {
   const chess = fromUci(moves) ?? fromUci(game.moves_uci)!;
   const shownMoves = reviewing ? game.moves_uci.slice(0, viewPly!) : moves;
   const shown = reviewing ? fromUci(shownMoves)! : chess;
-  const caps = captured(chess);
   const bottom: Color = (myColor ?? 'w') === 'w' ? (flipped ? 'b' : 'w') : (flipped ? 'w' : 'b');
   const top: Color = bottom === 'w' ? 'b' : 'w';
   const active = game.status === 'active';
@@ -168,6 +167,8 @@ export function OnlineGamePage() {
   const avatarOf = (c: Color) => (stranger ? null : avatars[(c === 'w' ? game.white_id : game.black_id) ?? '']);
   const ratingOf = (c: Color) => (game.kind === 'random' ? ratings[(c === 'w' ? game.white_id : game.black_id) ?? ''] : undefined);
   const name = (c: Color) => names[(c === 'w' ? game.white_id : game.black_id) ?? ''] ?? (c === 'w' ? 'Weiß' : 'Schwarz');
+  // Finished own games show the analysis panel, which has its own clickable move list.
+  const withAnalysis = game.status === 'finished' && !!myColor && game.moves_uci.length > 0;
   const drawOfferedByOpponent = active && !!game.draw_offer_by && game.draw_offer_by !== me;
   const drawOfferedByMe = active && game.draw_offer_by === me;
 
@@ -253,14 +254,15 @@ export function OnlineGamePage() {
       <div className="boardcol">
         <div className="pbar">
           <div className="pname"><i className={`swatch ${top}`} /><Avatar url={avatarOf(top)} name={name(top)} size={24} />{name(top)}{ratingOf(top) !== undefined && <span className="rating">{ratingOf(top)}</span>}</div>
-          <span className="caps">{caps[top]}</span>
+          <Captures game={shown} color={top} />
           {clockOf(top)}
         </div>
         <Board game={shown} orientation={bottom} interactive={myTurn && !reviewing} lastMove={shownMoves.at(-1)} onMove={onMove}
+          arrow={game.status === 'finished' ? betterMove(analysis.state, game.moves_uci, shownMoves.length) : null}
           onBlocked={() => active && setMsg(myColor ? 'Warte auf den Zug deines Gegners.' : null)} />
         <div className="pbar">
           <div className="pname"><i className={`swatch ${bottom}`} /><Avatar url={avatarOf(bottom)} name={name(bottom)} size={24} />{name(bottom)}{ratingOf(bottom) !== undefined && <span className="rating">{ratingOf(bottom)}</span>}</div>
-          <span className="caps">{caps[bottom]}</span>
+          <Captures game={shown} color={bottom} />
           {clockOf(bottom)}
         </div>
         <div className={`status${game.status === 'finished' || game.status === 'aborted' ? ' end' : ''}`} aria-live="polite" data-testid="status">{status}</div>
@@ -335,7 +337,7 @@ export function OnlineGamePage() {
       </div>
 
       <aside className="panel">
-        {game.status === 'finished' && myColor && game.moves_uci.length > 0 && (
+        {withAnalysis && (
           <AnalysisPanel moves={game.moves_uci} state={analysis.state} remaining={analysis.remaining} onStart={() => void analysis.start()}
             ply={viewPly ?? game.moves_uci.length} onSelect={setViewPly} names={{ w: name('w'), b: name('b') }} />
         )}
@@ -346,12 +348,12 @@ export function OnlineGamePage() {
           <h2>Züge</h2>
           <span className="pill">{timeControlLabel(game.time_control)}</span>
         </div>
-        <div className="moves" data-testid="moves">
+        {!withAnalysis && <div className="moves" data-testid="moves">
           {moves.length === 0 && <><span className="n">–</span><span className="muted">noch keine</span><span /></>}
           {movePairs(chess).map(([n, a, b]) => (
             <span key={n} style={{ display: 'contents' }}><span className="n">{n}.</span><span>{a}</span><span>{b}</span></span>
           ))}
-        </div>
+        </div>}
 
         <span className="lbl">Chat</span>
         <div className="chat" data-testid="chat">

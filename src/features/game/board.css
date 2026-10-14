@@ -24,6 +24,9 @@
 .sq .cr { left: 4%; top: 4%; }
 .sq.l .cf, .sq.l .cr { color: var(--sq-d); }
 .sq.d .cf, .sq.d .cr { color: var(--sq-l); }
+.arrow { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1; pointer-events: none; z-index: 3; }
+.arrow line { stroke: rgba(46, 140, 70, .82); stroke-width: .17; stroke-linecap: round; }
+.arrow marker path { fill: rgba(46, 140, 70, .82); }
 .promo { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); display: flex; align-items: center; justify-content: center; z-index: 5; border-radius: 6px; }
 .promo-box { flex-direction: row; gap: 8px; }
 .promo-box button { font-size: 2.4rem; width: 64px; height: 64px; padding: 0; font-family: var(--f-pieces); }
@@ -45,6 +48,7 @@
 
 /* Online game */
 .pbar .caps { flex: 1; text-align: right; }
+.caps .lead { font: 600 .85rem/1 var(--f-mono); letter-spacing: 0; color: var(--ink); margin-left: 4px; }
 .clock { font-family: var(--f-mono); font-weight: 600; font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); min-width: 4.2em; text-align: center; }
 .clock.run { border-color: var(--accent); color: var(--accent); }
 .clock.low.run { border-color: var(--check); color: var(--check); }
