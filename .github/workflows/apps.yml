@@ -17,6 +17,15 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 21, cache: gradle }
       - run: npm ci
+      # Firebase config for push notifications (GitHub secret GOOGLE_SERVICES_JSON); without it the app builds
+      # and runs, only push is switched off.
+      - name: Firebase config
+        env: { GOOGLE_SERVICES_JSON: '${{ secrets.GOOGLE_SERVICES_JSON }}' }
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            echo "VITE_PUSH_ANDROID=1" >> "$GITHUB_ENV"
+          fi
       - run: npm run build
       - run: npx cap sync android
       - run: ./gradlew assembleDebug --no-daemon

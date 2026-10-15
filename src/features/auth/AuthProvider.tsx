@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { forgetPushToken } from '../notify/push';
 import { supabase, type Entitlement, type Profile } from '../../lib/supabase';
 
 type AuthState = {
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(() => load(session), [load, session]);
   const value: AuthState = {
     ready, session, profile, entitlement, refresh,
-    signOut: async () => { await supabase?.auth.signOut(); },
+    signOut: async () => { await forgetPushToken(); await supabase?.auth.signOut(); },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
