@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { fileUrl } from '../../lib/native';
 import { errorText, supabase } from '../../lib/supabase';
@@ -36,9 +36,18 @@ export function DesignPage() {
   const { session, profile, entitlement, refresh } = useAuth();
   const design = useDesign();
   const hasPlus = !!entitlement && entitlement.plan !== 'free';
+  // Signed in but the profile is still loading: a tap now would be lost.
+  const loading = !!session && !profile;
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  async function choose(patch: { board_theme?: string; piece_set?: string }, plus: boolean) {
+  // Saves run one after another: with quick taps a later refresh could otherwise show a stale profile.
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  function choose(patch: { board_theme?: string; piece_set?: string }, plus: boolean) {
+    queue.current = queue.current.then(() => save(patch, plus));
+    return queue.current;
+  }
+
+  async function save(patch: { board_theme?: string; piece_set?: string }, plus: boolean) {
     setMsg(null);
     if (!session || !profile || !supabase) { setMsg({ ok: false, text: 'Bitte melde dich an, um ein Design zu speichern.' }); return; }
     if (plus && !hasPlus) { setMsg({ ok: false, text: 'Dieses Design gibt es mit Plus. ' }); return; }
@@ -56,7 +65,7 @@ export function DesignPage() {
           {BOARD_THEMES.map((t) => (
             <button key={t.id} type="button" role="radio" aria-checked={design.board.id === t.id}
               className={`design${design.board.id === t.id ? ' on' : ''}${t.plus && !hasPlus ? ' locked' : ''}`}
-              onClick={() => void choose({ board_theme: t.id }, t.plus)}>
+              disabled={loading} onClick={() => void choose({ board_theme: t.id }, t.plus)}>
               <Swatch theme={t} />
               <span>{t.name}</span>
               {t.plus && <span className="pill accent">Plus</span>}
@@ -68,7 +77,7 @@ export function DesignPage() {
           {PIECE_SETS.map((p) => (
             <button key={p.id} type="button" role="radio" aria-checked={design.pieces.id === p.id}
               className={`design${design.pieces.id === p.id ? ' on' : ''}${p.plus && !hasPlus ? ' locked' : ''}`}
-              onClick={() => void choose({ piece_set: p.id }, p.plus)}>
+              disabled={loading} onClick={() => void choose({ piece_set: p.id }, p.plus)}>
               <PiecePreview set={p} />
               <span>{p.name}</span>
               {p.plus && <span className="pill accent">Plus</span>}
