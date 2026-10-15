@@ -5,6 +5,9 @@ import { App } from './app/App';
 import { AuthProvider } from './features/auth/AuthProvider';
 import './styles/fonts.css';
 import './styles/global.css';
+import { setupNativeApp } from './lib/native';
+
+setupNativeApp();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

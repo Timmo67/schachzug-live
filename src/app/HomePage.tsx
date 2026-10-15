@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/AuthProvider';
+import { isNativeApp } from '../lib/native';
 
 const isStandalone = () =>
   window.matchMedia?.('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
@@ -9,7 +10,7 @@ const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.p
 
 /** Short how-to for adding Knightcall to the home screen, hidden when it already runs from there. */
 function HomeScreenHint() {
-  if (isStandalone()) return null;
+  if (isNativeApp || isStandalone()) return null;
   return (
     <>
       <span className="lbl">Als App auf dem Handy</span>

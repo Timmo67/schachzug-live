@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
+import { fileUrl } from '../../lib/native';
 import { errorText, supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { GLYPH, VS15 } from '../game/chessRules';
@@ -91,7 +92,7 @@ export function DesignPage() {
           <li>Rhos: RhosGFX, CC0</li>
           <li>Scherenschnitt: Nikolay Anzarov, CC BY 4.0</li>
         </ul>
-        <p className="note"><a href="/pieces/CREDITS.md" target="_blank" rel="noreferrer">Lizenztexte</a></p>
+        <p className="note"><a href={fileUrl('/pieces/CREDITS.md')} target="_blank" rel="noreferrer">Lizenztexte</a></p>
       </section>
     </div>
   );

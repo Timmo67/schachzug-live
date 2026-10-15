@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { PENDING_INVITE_KEY, errorText, storage, supabase } from '../../lib/supabase';
 import { useAuth } from './AuthProvider';
+import { isNativeApp, newTab, publicOrigin } from '../../lib/native';
 
 /**
  * Magic-link sign-in. Closed beta: new accounts need an invite code (from an invite link or typed in),
@@ -32,7 +33,7 @@ export function LoginPage() {
     const { error: err } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: publicOrigin(),
         // Without an invite code only existing accounts can sign in.
         shouldCreateUser: signingUp,
         data: signingUp
@@ -63,7 +64,7 @@ export function LoginPage() {
     <div className="grid2">
       <form className="panel" onSubmit={submit}>
         <h1>Anmelden</h1>
-        <p className="note">Du bekommst einen Anmelde-Link per E-Mail. Kein Passwort nötig.</p>
+        <p className="note">{isNativeApp ? 'Du bekommst einen Code per E-Mail. Kein Passwort nötig.' : 'Du bekommst einen Anmelde-Link per E-Mail. Kein Passwort nötig.'}</p>
         <label className="lbl" htmlFor="email">E-Mail</label>
         <input id="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@beispiel.de" />
 
@@ -80,21 +81,21 @@ export function LoginPage() {
             </label>
             <label className="check">
               <input type="checkbox" required checked={terms} onChange={(e) => setTerms(e.target.checked)} />
-              <span>Ich akzeptiere die <Link to="/nutzungsbedingungen" target="_blank">Nutzungsbedingungen der Beta</Link> und habe die <Link to="/datenschutz" target="_blank">Datenschutzerklärung</Link> gelesen.</span>
+              <span>Ich akzeptiere die <Link to="/nutzungsbedingungen" {...newTab}>Nutzungsbedingungen der Beta</Link> und habe die <Link to="/datenschutz" {...newTab}>Datenschutzerklärung</Link> gelesen.</span>
             </label>
           </>
         )}
 
         <button className="primary" type="submit" disabled={state === 'sending' || (signingUp && (!adult || !terms))}>
-          {state === 'sending' ? 'Sende…' : 'Anmelde-Link schicken'}
+          {state === 'sending' ? 'Sende…' : isNativeApp ? 'Code schicken' : 'Anmelde-Link schicken'}
         </button>
-        {state === 'sent' && <p className="success" role="status">E-Mail ist unterwegs. Tippe auf den Link darin – oder gib unten den Code aus der E-Mail ein.</p>}
+        {state === 'sent' && <p className="success" role="status">{isNativeApp ? 'E-Mail ist unterwegs. Gib unten den Code aus der E-Mail ein.' : 'E-Mail ist unterwegs. Tippe auf den Link darin – oder gib unten den Code aus der E-Mail ein.'}</p>}
         {state === 'error' && <p className="error" role="alert">{error}</p>}
       </form>
       {state === 'sent' && (
         <form className="panel" onSubmit={verify}>
           <h2>Code eingeben</h2>
-          <p className="note">Praktisch, wenn du Knightcall vom Home-Bildschirm nutzt oder die E-Mail auf einem anderen Gerät liest.</p>
+          {!isNativeApp && <p className="note">Praktisch, wenn du Knightcall vom Home-Bildschirm nutzt oder die E-Mail auf einem anderen Gerät liest.</p>}
           <label className="lbl" htmlFor="otp">Code aus der E-Mail</label>
           <input id="otp" className="mono" inputMode="numeric" autoComplete="one-time-code" maxLength={10} value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} placeholder="123456" style={{ letterSpacing: '.2em' }} />

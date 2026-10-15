@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dist-e2e', 'prototype', 'supabase/functions', 'playwright-report', 'test-results', 'public/engine'] },
+  { ignores: ['dist', 'dist-e2e', 'prototype', 'supabase/functions', 'playwright-report', 'test-results', 'public/engine', 'android', 'ios'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

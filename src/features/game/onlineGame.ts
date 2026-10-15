@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
+import { isNativeApp } from '../../lib/native';
 import type { GameState } from '../../../supabase/functions/_shared/gameLogic';
 import { fromUci } from './chessRules';
 
@@ -139,6 +140,14 @@ export function toPgn(g: GameRow, white: string, black: string): string {
 }
 
 export function downloadPgn(g: GameRow, white: string, black: string) {
+  // The app's WebView cannot save downloads; the PGN goes to the clipboard instead.
+  if (isNativeApp) {
+    void navigator.clipboard.writeText(toPgn(g, white, black)).then(
+      () => window.alert('PGN in die Zwischenablage kopiert.'),
+      () => window.alert('Kopieren hat nicht geklappt.'),
+    );
+    return;
+  }
   const blob = new Blob([toPgn(g, white, black)], { type: 'application/x-chess-pgn' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
