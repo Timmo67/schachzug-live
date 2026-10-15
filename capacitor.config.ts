@@ -8,6 +8,10 @@ const config: CapacitorConfig = {
   backgroundColor: '#eceff2',
   ios: { contentInset: 'never' },
   android: { allowMixedContent: false },
+  plugins: {
+    // While the app is open the in-app notifications show events; pushes only appear in the background.
+    PushNotifications: { presentationOptions: [] },
+  },
 };
 
 export default config;

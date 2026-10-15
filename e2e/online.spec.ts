@@ -796,3 +796,36 @@ test('reports: three reporters exclude a player from random games; an admin rele
   await card.getByRole('button', { name: 'Unbegründet – freigeben' }).click();
   await expect.poll(async () => (await admin.from('profiles').select('random_banned').eq('id', target.id).single()).data!.random_banned).toBe(false);
 });
+
+test('push: game events are queued for app users and handed to send-push; tokens stay private', async () => {
+  const anna = await makeUser('Anna');
+  const ben = await makeUser('Ben');
+  await admin.from('friendships').insert({ requester_id: anna.id, addressee_id: ben.id, status: 'accepted' });
+  const as = (s: { access_token: string } | null) =>
+    createClient(URL, PUBLISHABLE, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${s!.access_token}` } } });
+  const token = `test-token-${ben.id}`;
+  expect((await as(ben.session).rpc('register_push_token', { p_token: token, p_platform: 'android' })).error).toBeNull();
+  // Clients can neither read tokens nor the queue.
+  expect((await as(ben.session).from('push_tokens').select('token')).data).toEqual([]);
+  expect((await as(ben.session).from('push_queue').select('id')).data).toEqual([]);
+
+  const { data: gameId } = await as(anna.session).rpc('create_game', { p_opponent: ben.id, p_time_control: 'none', p_color: 'w' });
+  // The database wakes send-push, which has no Firebase key locally and marks the message as skipped.
+  const queued = async () => (await admin.from('push_queue').select('kind, title, body, url, status, info').eq('user_id', ben.id).order('id')).data;
+  await expect.poll(queued, { timeout: 20_000 }).toEqual([
+    { kind: 'challenge', title: 'Neue Herausforderung', body: 'Anna fordert dich zu einer Partie heraus.', url: '/partien', status: 'skipped', info: 'android not configured' },
+  ]);
+
+  // Anna has no app: accepting and her move queue nothing for her, Ben is told it is his turn.
+  await as(ben.session).rpc('respond_game', { p_game: gameId, p_action: 'accept' });
+  expect((await as(anna.session).functions.invoke('make-move', { body: { gameId, uci: 'e2e4' } })).error).toBeNull();
+  await expect.poll(async () => (await queued())?.map((r) => `${r.kind}:${r.body}`), { timeout: 20_000 })
+    .toEqual(['challenge:Anna fordert dich zu einer Partie heraus.', 'move:Anna hat gezogen.']);
+  expect((await admin.from('push_queue').select('id').eq('user_id', anna.id)).data).toEqual([]);
+
+  // After signing out on the device nothing more is queued.
+  await as(ben.session).rpc('unregister_push_token', { p_token: token });
+  await as(anna.session).from('game_messages').insert({ game_id: gameId, sender_id: anna.id, body: 'Hallo!' });
+  await new Promise((r) => setTimeout(r, 1000));
+  expect((await queued())?.length).toBe(2);
+});

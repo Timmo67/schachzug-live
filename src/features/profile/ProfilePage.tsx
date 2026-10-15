@@ -5,11 +5,13 @@ import { useAuth } from '../auth/AuthProvider';
 import { notificationsSupported, setSoundEnabled, soundEnabled } from '../notify/useGameNotifications';
 import { Avatar } from './Avatar';
 import { BlockedList } from './BlockedList';
+import { usePushPermission } from '../notify/push';
 import { toSquareWebp } from './avatarImage';
 
 /** Name, profile picture and notification settings. */
 export function ProfilePage() {
   const { session, ready, profile, refresh, signOut } = useAuth();
+  const pushState = usePushPermission();
   const [name, setName] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -98,6 +100,8 @@ export function ProfilePage() {
           <input type="checkbox" checked={sound} onChange={(e) => { setSoundEnabled(e.target.checked); setSound(e.target.checked); }} />
           Ton bei Benachrichtigungen (auf diesem Gerät)
         </label>
+        {pushState === 'granted' && <p className="note" data-testid="push-state">Push-Nachrichten sind an: Du erfährst, wenn du am Zug bist, herausgefordert wirst oder eine Nachricht bekommst.</p>}
+        {pushState === 'denied' && <p className="note" data-testid="push-state">Push-Nachrichten sind aus. Einschalten kannst du sie in den Einstellungen deines Handys unter Mitteilungen → Knightcall.</p>}
         {permission === 'default' && (
           <button type="button" onClick={() => void Notification.requestPermission().then(setPermission)}>Browser-Benachrichtigungen erlauben</button>
         )}

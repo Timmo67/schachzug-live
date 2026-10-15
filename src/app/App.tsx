@@ -9,6 +9,7 @@ import { LocalGamePage } from '../features/game/LocalGamePage';
 import { OnlineGamePage } from '../features/game/OnlineGamePage';
 import { NotificationStack } from '../features/notify/NotificationStack';
 import { useGameNotifications } from '../features/notify/useGameNotifications';
+import { usePushNotifications } from '../features/notify/push';
 import { DesignPage } from '../features/appearance/DesignPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { FeedbackPage } from '../features/feedback/FeedbackPage';
@@ -30,6 +31,7 @@ export function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { notices, dismiss, badge } = useGameNotifications(session?.user.id);
+  usePushNotifications(session?.user.id, navigate);
 
   // After signing in via magic link, redeem an invite that was opened before login.
   useEffect(() => {
