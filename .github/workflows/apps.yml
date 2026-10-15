@@ -50,5 +50,29 @@ jobs:
       - run: >
           xcodebuild -project App.xcodeproj -scheme App -configuration Debug
           -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath build CURRENT_PROJECT_VERSION=${{ github.run_number }}
           CODE_SIGNING_ALLOWED=NO build
         working-directory: ios/App
+      # Start the app in the iPhone and iPad simulators and keep screenshots (artifact "iphone-screenshots").
+      - name: Simulator screenshots
+        working-directory: ios/App
+        run: |
+          mkdir -p screenshots
+          for kind in iPhone iPad; do
+            udid=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('$kind ') and 'mini' not in x['name']))")
+            xcrun simctl boot "$udid"
+            xcrun simctl bootstatus "$udid" -b
+            xcrun simctl install "$udid" build/Build/Products/Debug-iphonesimulator/App.app
+            xcrun simctl launch "$udid" app.knightcall
+            sleep 20
+            xcrun simctl io "$udid" screenshot "screenshots/$kind-start.png"
+            xcrun simctl ui "$udid" appearance dark
+            sleep 3
+            xcrun simctl io "$udid" screenshot "screenshots/$kind-dark.png"
+            xcrun simctl shutdown "$udid"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iphone-screenshots
+          path: ios/App/screenshots
+          retention-days: 30
