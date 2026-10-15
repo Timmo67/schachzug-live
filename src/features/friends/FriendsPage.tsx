@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { errorText, supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { renderSVG } from 'uqr';
+import { publicOrigin } from '../../lib/native';
 import { Avatar } from '../profile/Avatar';
 import { TIME_CONTROLS, createGame, gameErrorText } from '../game/onlineGame';
 
@@ -10,7 +11,7 @@ type Row = { requester_id: string; addressee_id: string; status: 'pending' | 'ac
 type Person = { id: string; display_name: string; avatar_url: string | null };
 
 export function inviteUrl(code: string) {
-  return `${window.location.origin}/i/${code}`;
+  return `${publicOrigin()}/i/${code}`;
 }
 
 export function FriendsPage() {

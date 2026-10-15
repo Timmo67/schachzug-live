@@ -40,7 +40,7 @@ Jeder Meilenstein endet mit einer lauffähigen Version und einer kurzen deutsche
 - **Fertig wenn:** Testkauf im Stripe-Testmodus schaltet Plus frei, Kündigung nimmt es zum Laufzeitende weg.
 - **Auftraggeber muss:** Stripe-Konto, RevenueCat-Konto, Preise bestätigen, Rechtstexte liefern.
 
-## M5 – Apps & Launch-Vorbereitung (ca. 70 h + Rest QA)
+## M5 – Apps & Launch-Vorbereitung (ca. 70 h + Rest QA) – Teil 1 (App-Gerüst, Build per GitHub) erledigt 15.10.2026
 - Capacitor iOS/Android, Push-Benachrichtigungen (Zug, Einladung, Testphase)
 - Kamera-/Mikro-Berechtigungen in Info.plist / AndroidManifest
 - Store-Einträge, Screenshots, Datenschutz-Angaben (App Privacy / Data Safety)
