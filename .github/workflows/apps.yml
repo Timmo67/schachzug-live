@@ -38,6 +38,8 @@ jobs:
 
   ios:
     runs-on: macos-15
+    permissions:
+      contents: write   # screenshots are also pushed to the branch ci/screenshots (readable without the artifact store)
     steps:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
@@ -76,3 +78,13 @@ jobs:
           name: iphone-screenshots
           path: ios/App/screenshots
           retention-days: 30
+      - name: Screenshots to branch ci/screenshots
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        working-directory: ios/App/screenshots
+        run: |
+          git init -q -b ci/screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Simulator screenshots for ${{ github.sha }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci/screenshots
