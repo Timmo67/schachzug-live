@@ -51,7 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(() => load(session), [load, session]);
   const value: AuthState = {
     ready, session, profile, entitlement, refresh,
-    signOut: async () => { await forgetPushToken(); await supabase?.auth.signOut(); },
+    signOut: async () => {
+      if (!supabase) return;
+      // Signing out must always work, also offline: detaching the push token is best effort, and if the
+      // server cannot be reached the session is at least removed from this device.
+      try { await forgetPushToken(); } catch { /* ignore */ }
+      const { error } = await supabase.auth.signOut();
+      if (error) await supabase.auth.signOut({ scope: 'local' });
+      setSession(null);
+      setProfile(null);
+      setEntitlement(null);
+    },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

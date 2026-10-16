@@ -17,6 +17,8 @@ const OPERATOR = {
   street: 'c/o Frameworks, Löffelstr. 22–24',
   city: '70597 Stuttgart',
   email: 'info@knightcall.app',
+  phone: '+49 711 9122356',
+  vatId: 'DE257328007',
 };
 
 const PAGES: Record<LegalSlug, { title: string; body: ReactNode }> = {
@@ -27,9 +29,9 @@ const PAGES: Record<LegalSlug, { title: string; body: ReactNode }> = {
         <h2>Angaben gemäß § 5 DDG</h2>
         <p>{OPERATOR.name}<br />{OPERATOR.street}<br />{OPERATOR.city}</p>
         <h2>Kontakt</h2>
-        <p>E-Mail: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a><br />Telefon: <Placeholder>Telefonnummer oder zweiter schneller Kontaktweg</Placeholder></p>
+        <p>E-Mail: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a><br />Telefon: <a href={`tel:${OPERATOR.phone.replace(/\s/g, '')}`}>{OPERATOR.phone}</a></p>
         <h2>Umsatzsteuer-ID</h2>
-        <p><Placeholder>USt-IdNr. gemäß § 27a UStG, falls vorhanden</Placeholder></p>
+        <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a Umsatzsteuergesetz: {OPERATOR.vatId}</p>
         <h2>Verantwortlich für den Inhalt</h2>
         <p>{OPERATOR.person}<br />{OPERATOR.street}<br />{OPERATOR.city}</p>
         <h2>Verbraucherstreitbeilegung</h2>

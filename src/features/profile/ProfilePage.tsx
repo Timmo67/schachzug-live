@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { errorText, supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { notificationsSupported, setSoundEnabled, soundEnabled } from '../notify/useGameNotifications';
@@ -19,6 +19,7 @@ export function ProfilePage() {
   const [permission, setPermission] = useState(() => (notificationsSupported() ? Notification.permission : 'unsupported'));
   const [confirmDelete, setConfirmDelete] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   if (!ready) return <div className="panel"><p className="muted">Wird geladen …</p></div>;
   if (!session) return <Navigate to="/anmelden" replace />;
@@ -74,10 +75,19 @@ export function ProfilePage() {
     await signOut();
   }
 
+  async function logOut() {
+    setBusy(true);
+    await signOut();
+    navigate('/', { replace: true });
+  }
+
   return (
     <div className="grid2">
       <section className="panel">
-        <h1>Profil</h1>
+        <div className="row spread">
+          <h1>Profil</h1>
+          <button type="button" disabled={busy} onClick={() => void logOut()} data-testid="logout">Abmelden</button>
+        </div>
         <div className="profilehead">
           <Avatar url={profile.avatar_url} name={profile.display_name} size={72} />
           <div className="row">
@@ -107,8 +117,6 @@ export function ProfilePage() {
         )}
         {permission === 'granted' && <p className="note">Browser-Benachrichtigungen sind erlaubt.</p>}
         {permission === 'denied' && <p className="note">Browser-Benachrichtigungen sind in deinen Browser-Einstellungen blockiert.</p>}
-        <div className="row"><button type="button" onClick={() => void signOut()}>Abmelden</button></div>
-
         <BlockedList me={profile.id} />
         {profile.is_admin && <div className="row"><Link className="btn" to="/moderation">Moderation</Link></div>}
 
