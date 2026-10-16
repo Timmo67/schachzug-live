@@ -10,23 +10,28 @@ function Placeholder({ children }: { children: ReactNode }) {
   return <span className="placeholder">[{children}]</span>;
 }
 
+/** Operator of Knightcall until the Cypriot Ltd exists (data from the client, 16.10.2026). */
+const OPERATOR = {
+  name: 'Timmo Gräber – Softwarelösungen',
+  person: 'Timmo Gräber',
+  street: 'c/o Frameworks, Löffelstr. 22–24',
+  city: '70597 Stuttgart',
+  email: 'info@knightcall.app',
+};
+
 const PAGES: Record<LegalSlug, { title: string; body: ReactNode }> = {
   impressum: {
     title: 'Impressum',
     body: (
       <>
         <h2>Angaben gemäß § 5 DDG</h2>
-        <p><Placeholder>Name des Anbieters bzw. Firma inkl. Rechtsform</Placeholder><br />
-          <Placeholder>Straße, Hausnummer</Placeholder><br /><Placeholder>PLZ, Ort</Placeholder></p>
-        <p>Vertreten durch: <Placeholder>Geschäftsführer/in</Placeholder></p>
+        <p>{OPERATOR.name}<br />{OPERATOR.street}<br />{OPERATOR.city}</p>
         <h2>Kontakt</h2>
-        <p>E-Mail: <Placeholder>Kontakt-E-Mail</Placeholder><br />Telefon: <Placeholder>Telefonnummer</Placeholder></p>
-        <h2>Registereintrag</h2>
-        <p><Placeholder>Registergericht und Registernummer, falls vorhanden</Placeholder></p>
+        <p>E-Mail: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a><br />Telefon: <Placeholder>Telefonnummer oder zweiter schneller Kontaktweg</Placeholder></p>
         <h2>Umsatzsteuer-ID</h2>
         <p><Placeholder>USt-IdNr. gemäß § 27a UStG, falls vorhanden</Placeholder></p>
         <h2>Verantwortlich für den Inhalt</h2>
-        <p><Placeholder>Name und Anschrift gemäß § 18 Abs. 2 MStV</Placeholder></p>
+        <p>{OPERATOR.person}<br />{OPERATOR.street}<br />{OPERATOR.city}</p>
         <h2>Verbraucherstreitbeilegung</h2>
         <p><Placeholder>Hinweis zur Teilnahme an Streitbeilegungsverfahren (Text von eRecht24)</Placeholder></p>
       </>
@@ -43,7 +48,9 @@ const PAGES: Record<LegalSlug, { title: string; body: ReactNode }> = {
           <li>Hosting der Web-App: Cloudflare Pages (Cloudflare, Inc.)</li>
           <li>Datenbank, Anmeldung, Echtzeit-Daten, Profilbilder: Supabase (Region EU, Frankfurt)</li>
           <li>Videochat: direkte Verbindung zwischen den Geräten (WebRTC); bei Bedarf Weiterleitung über Cloudflare Realtime TURN. Video und Ton werden nicht gespeichert.</li>
-          <li>Anmelde-E-Mails: Resend (geplant)</li>
+          <li>Anmelde-E-Mails: Resend (Plus Five Five, Inc.; Versand aus der EU, Region Irland)</li>
+          <li>Push-Nachrichten in den Apps: Firebase Cloud Messaging (Google, Android) und Apple Push Notification Service (iOS); gespeichert wird ein Geräte-Token pro angemeldetem Gerät.</li>
+          <li>Kontakt-E-Mail info@knightcall.app: Weiterleitung über Cloudflare Email Routing</li>
           <li>Bei der Anmeldung gespeichert: Bestätigung „mindestens 18 Jahre“ und Zustimmung zu den Nutzungsbedingungen (jeweils mit Zeitpunkt), Einladungscode.</li>
           <li>Zahlungen: Stripe (geplant, Meilenstein 4)</li>
           <li>Schriften werden von unserer eigenen Domain geladen, nicht von Google.</li>
