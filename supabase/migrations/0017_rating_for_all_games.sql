@@ -43,7 +43,8 @@ $$;
 revoke execute on function public.rate_game() from public, anon, authenticated;
 revoke execute on function public.rating_change(int, int, float8, int) from public, anon, authenticated;
 
-drop trigger games_rate_random on public.games;
-drop function public.rate_random_game();
+-- Replaces 0015's AFTER trigger (random games only). Disabled instead of dropped: the Supabase MCP tool
+-- hangs on drop statements in production.
+alter table public.games disable trigger games_rate_random;
 create trigger games_rate before update of status on public.games
   for each row execute function public.rate_game();
