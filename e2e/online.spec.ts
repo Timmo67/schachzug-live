@@ -302,6 +302,15 @@ test('profile: picture upload, name change and invite QR code', async ({ browser
   await a.goto('/freunde');
   await a.getByRole('button', { name: 'QR-Code zeigen' }).click();
   await expect(a.getByTestId('invite-qr').locator('svg')).toBeVisible();
+
+  // Signing out from the top of the profile page leads to the start page and ends the session on the server.
+  await a.goto('/profil');
+  await a.getByTestId('logout').click();
+  await expect(a).toHaveURL(/\/$/);
+  await expect(a.getByRole('navigation').getByRole('link', { name: 'Anmelden' })).toBeVisible();
+  expect(await a.evaluate((k) => localStorage.getItem(k), STORAGE_KEY)).toBeNull();
+  const refreshed = await createClient(URL, PUBLISHABLE, { auth: { persistSession: false } }).auth.refreshSession({ refresh_token: anna.session!.refresh_token });
+  expect(refreshed.error).toBeTruthy();
 });
 
 test('closed beta: sign-up needs an invite code, 18+ and the terms; beta accounts get Plus', async ({ browser }) => {
