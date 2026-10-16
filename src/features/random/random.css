@@ -3,6 +3,9 @@
 @media (prefers-reduced-motion: no-preference) { .spinner { animation: spin 1s linear infinite; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 .phrases { display: flex; flex-wrap: wrap; gap: 6px; }
-.pname .rating { margin-left: 6px; color: var(--muted); font-family: var(--f-mono); font-size: .85em; }
+.pname .rating { margin-left: 6px; color: var(--muted); font-family: var(--f-mono); font-size: .85em; white-space: nowrap; }
+.rating .up, .rating .down { margin-left: 4px; font-weight: 600; }
+.rating .up { color: var(--ok); }
+.rating .down { color: var(--check); }
 .reportform { display: flex; flex-direction: column; gap: 8px; }
 .reportform h3 { margin: 0; font-family: var(--f-display); }

@@ -98,9 +98,18 @@ test('two friends play a full game with clock, chat and a reload in the middle',
   await expect(b.getByTestId('status')).toHaveText('Du verlierst – Schachmatt');
   await expect(b.getByTestId('move-table')).toContainText('Qxf7#');
 
+  // Games between friends count for the playing strength: rating before the game and the change.
+  await expect(a.getByTestId('rating-w')).toHaveText('1200+20');
+  await expect(a.getByTestId('rating-b')).toHaveText('1200−20');
+
   // The server stored the game; it shows up in the archive.
   await b.goto('/partien');
   await expect(b.getByTestId('archive')).toContainText('Du verlierst – Schachmatt');
+  await b.goto('/profil');
+  await expect(b.getByTestId('profile-rating')).toContainText('Deine Spielstärke: 1180');
+  await expect(b.getByTestId('profile-rating')).toContainText('1 gewertete Partie (vorläufig)');
+  await a.goto('/freunde');
+  await expect(a.getByTestId('friends')).toContainText('1180');
 });
 
 test('the server rejects a move from the player who is not on turn', async () => {
@@ -695,8 +704,14 @@ test('random opponents: matched from the search page, no video and fixed phrases
   const free = await asUser(ben.session).from('game_messages').insert({ game_id: gameId, sender_id: ben.id, body: 'meine Nummer ist …' });
   expect(free.error?.message).toContain('chat_phrases_only');
 
-  // Ben resigns: Elo moves both ratings by 20 (first games count double).
+  // One move each, then White resigns: Elo moves both ratings by 20 (first games count double).
+  // A game only counts once both sides have moved.
   const white = g!.white_id === anna.id ? a : b;
+  const black = white === a ? b : a;
+  await move(white, 'e2', 'e4');
+  await expect(black.getByTestId('status')).toHaveText('Du bist am Zug');
+  await move(black, 'e7', 'e5');
+  await expect(white.getByTestId('status')).toHaveText('Du bist am Zug');
   await white.getByRole('button', { name: 'Aufgeben' }).click();
   await white.getByRole('button', { name: 'Ja, aufgeben' }).click();
   const loser = g!.white_id;

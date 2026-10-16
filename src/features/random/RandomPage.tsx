@@ -59,7 +59,7 @@ export function RandomPage() {
     <div className="grid2">
       <section className="panel" data-testid="random">
         <h1>Zufallsgegner</h1>
-        <p className="note">Spiel gegen jemanden mit ähnlicher Spielstärke. Deine Wertung für Zufallspartien: <b data-testid="random-rating">{profile?.random_rating ?? 1200}</b>{profile?.random_games ? ` (${profile.random_games} Partien)` : ''}.</p>
+        <p className="note">Spiel gegen jemanden mit ähnlicher Spielstärke. Deine Spielstärke: <b data-testid="random-rating">{profile?.random_rating ?? 1200}</b>.</p>
 
         {state.kind === 'banned' ? (
           <p className="error" role="alert" data-testid="random-state">Du bist wegen Meldungen anderer Spieler vorläufig von Zufallspartien ausgeschlossen. Partien mit Freunden gehen weiter.</p>

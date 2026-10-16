@@ -8,7 +8,7 @@ import { Avatar } from '../profile/Avatar';
 import { TIME_CONTROLS, createGame, gameErrorText } from '../game/onlineGame';
 
 type Row = { requester_id: string; addressee_id: string; status: 'pending' | 'accepted' | 'blocked' };
-type Person = { id: string; display_name: string; avatar_url: string | null };
+type Person = { id: string; display_name: string; avatar_url: string | null; random_rating: number };
 
 export function inviteUrl(code: string) {
   return `${publicOrigin()}/i/${code}`;
@@ -19,6 +19,7 @@ export function FriendsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [avatars, setAvatars] = useState<Record<string, string | null>>({});
+  const [ratings, setRatings] = useState<Record<string, number>>({});
   const [showQr, setShowQr] = useState(false);
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -35,9 +36,10 @@ export function FriendsPage() {
     setRows(list);
     const ids = [...new Set(list.map((r) => (r.requester_id === me ? r.addressee_id : r.requester_id)))];
     if (ids.length) {
-      const { data: ps } = await supabase.from('profiles').select('id, display_name, avatar_url').in('id', ids);
+      const { data: ps } = await supabase.from('profiles').select('id, display_name, avatar_url, random_rating').in('id', ids);
       setNames(Object.fromEntries(((ps ?? []) as Person[]).map((p) => [p.id, p.display_name])));
       setAvatars(Object.fromEntries(((ps ?? []) as Person[]).map((p) => [p.id, p.avatar_url])));
+      setRatings(Object.fromEntries(((ps ?? []) as Person[]).map((p) => [p.id, p.random_rating])));
     }
   }, [me]);
 
@@ -129,7 +131,7 @@ export function FriendsPage() {
           {friends.length === 0 && <p className="note">Noch niemand. Teile deinen Link, um den ersten Freund einzuladen.</p>}
           {friends.map((r) => (
             <div className="item" key={other(r)}>
-              <span className="row"><Avatar url={avatars[other(r)]} name={names[other(r)] ?? 'Spieler'} /><b>{names[other(r)] ?? 'Spieler'}</b></span>
+              <span className="row"><Avatar url={avatars[other(r)]} name={names[other(r)] ?? 'Spieler'} /><b>{names[other(r)] ?? 'Spieler'}</b>{ratings[other(r)] !== undefined && <span className="note" title="Spielstärke">{ratings[other(r)]}</span>}</span>
               <div className="row">
                 <button type="button" className={challenge === other(r) ? '' : 'primary'}
                   onClick={() => setChallenge(challenge === other(r) ? null : other(r))}>Herausfordern</button>
