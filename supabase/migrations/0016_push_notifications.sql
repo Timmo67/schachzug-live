@@ -2,7 +2,7 @@
 -- Edge Function send-push (via pg_net), which delivers them through Firebase Cloud Messaging (Android) and
 -- APNs (iOS). Clients only register/unregister their own device token; everything else is server-side.
 
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;
 
 -- ---------- Device tokens ----------
 create table public.push_tokens (

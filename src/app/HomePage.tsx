@@ -75,7 +75,7 @@ export function HomePage() {
             <h2>Was als Nächstes kommt</h2>
             <ul className="note steps">
               <li>Plus und Pro mit Analyse und KI-Coach</li>
-              <li>Apps für iPhone und Android</li>
+              {!isNativeApp && <li>Apps für iPhone und Android</li>}
             </ul>
             <HomeScreenHint />
           </>
