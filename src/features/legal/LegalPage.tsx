@@ -11,7 +11,7 @@ function Placeholder({ children }: { children: ReactNode }) {
 }
 
 /** Operator of Knightcall until the Cypriot Ltd exists (data from the client, 16.10.2026). */
-const OPERATOR = {
+export const OPERATOR = {
   name: 'Timmo Gräber – Softwarelösungen',
   person: 'Timmo Gräber',
   street: 'c/o Frameworks, Löffelstr. 22–24',
@@ -105,6 +105,7 @@ export function LegalFooter({ extra }: { extra?: ReactNode }) {
   return (
     <footer className="legalfooter">
       {extra}
+      <Link to="/hilfe">Hilfe</Link>
       <Link to="/impressum">Impressum</Link>
       <Link to="/datenschutz">Datenschutz</Link>
       <Link to="/agb">AGB</Link>
