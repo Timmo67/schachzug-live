@@ -63,7 +63,8 @@ Vorgeschlagene Reihenfolge (17.10.2026): erst Abos und Store-Start, dann Vereine
 - **Schritt 1 – Verein und Vereinsturniere (Erwachsene):** Verein anlegen, Mitglieder per Link/QR, Rollen (Admin, Turnierleiter, Mitglied); Turniere mit Regeln des Vereins (Bedenkzeit, Runden, Start, Anmeldeschluss, jeder gegen jeden / Schweizer System, gewertet, Kamera Pflicht); Anmeldung, automatische Paarung und Partiestart, Tabelle, Push zu jeder Runde. Umfang etwa wie Zufallsgegner + Spielstärke zusammen.
 - **Schritt 2 – Verein gegen Verein:** Mannschaftskampf an 4–8 Brettern, Aufstellung, Brettpunkte, Ergebnisseite.
 - **Schritt 3 – Jugend, Trainer, Liga:** Elternfreigabe und Minderjährigenschutz (vorher rechtlich prüfen), Trainer-Modus, Online-Liga zwischen Vereinen.
-- **Auftraggeber muss:** Preis für das Vereins-Abo festlegen, Testverein finden, Jugendschutz mit Anwalt klären (vor Schritt 3).
+- **Startangebot:** die ersten 10–20 Vereine 6 Monate kostenlos (gehört zu Schritt 1).
+- **Auftraggeber muss:** Preis für das Vereins-Abo und Zahl der Gratis-Vereine festlegen, Testverein finden, Jugendschutz mit Anwalt klären (vor Schritt 3).
 
 ## Später (Ausbaustufe 2, ca. 400 h)
 Analyse + Puzzles (Stockfish WASM) · KI-Coach · private Turniere · Gruppen-Video und Zuschauer (LiveKit) · Partie-Aufzeichnung mit Video · Trainermodus (siehe M6) · Familienabo.
