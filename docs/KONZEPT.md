@@ -38,6 +38,7 @@ Erweiterung von Knightcall, **keine eigene App**: Konten, Partien mit Uhr, Serve
 - **Jugend:** Vereine haben viele Minderjährige, Knightcall ist derzeit ab 18. Dafür nötig: Elternfreigabe, Video nur innerhalb des eigenen Vereins, Verein trägt Verantwortung für seine Mitglieder. Rechtlich prüfen lassen (Anwalt), bevor es gebaut wird.
 - **Wertung:** zunächst nur die eigene Spielstärke; offizielle DWZ/Elo nur nach Regeln des Schachbunds (später klären).
 - **Preis:** Vereins-Abo, alle Mitglieder erhalten Plus; Preis legt der Auftraggeber fest. Guter Weg, viele Nutzer auf einmal zu gewinnen.
+- **Startangebot (Idee 17.10.2026):** Die ersten 10–20 Vereine nutzen Knightcall 6 Monate kostenlos (genaue Zahl legt der Auftraggeber fest). Umsetzung wie die Beta: Vereins-Plus mit eigener Quelle in `entitlements`, Zähler serverseitig, Ende des Gratis-Zeitraums für Verein und Mitglieder klar anzeigen und rechtzeitig erinnern; danach Vereins-Abo oder zurück auf Basis, ohne automatische Kosten.
 - Gruppen-Video (Zuschauer, Trainer mit mehreren Schülern) braucht später einen eigenen Video-Dienst (z. B. LiveKit); für Turniere reicht das 1:1-Video.
 
 ## Kosten (Schätzung)
