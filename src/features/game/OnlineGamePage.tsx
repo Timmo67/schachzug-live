@@ -165,7 +165,18 @@ export function OnlineGamePage() {
   // Strangers (random game, not friends): no video, fixed chat phrases, no profile pictures.
   const stranger = game.kind === 'random' && friendship !== 'accepted';
   const avatarOf = (c: Color) => (stranger ? null : avatars[(c === 'w' ? game.white_id : game.black_id) ?? '']);
-  const ratingOf = (c: Color) => (game.kind === 'random' ? ratings[(c === 'w' ? game.white_id : game.black_id) ?? ''] : undefined);
+  // Finished rated games show the rating before the game and the change; otherwise the current rating.
+  const ratingOf = (c: Color) => {
+    const before = c === 'w' ? game.white_rating : game.black_rating;
+    const diff = c === 'w' ? game.white_rating_diff : game.black_rating_diff;
+    const value = before ?? ratings[(c === 'w' ? game.white_id : game.black_id) ?? ''];
+    if (value === undefined) return null;
+    return (
+      <span className="rating" data-testid={`rating-${c}`}>
+        {value}{diff != null && <b className={diff >= 0 ? 'up' : 'down'}>{diff >= 0 ? `+${diff}` : `−${-diff}`}</b>}
+      </span>
+    );
+  };
   const name = (c: Color) => names[(c === 'w' ? game.white_id : game.black_id) ?? ''] ?? (c === 'w' ? 'Weiß' : 'Schwarz');
   // Finished own games show the analysis panel, which has its own clickable move list.
   const withAnalysis = game.status === 'finished' && !!myColor && game.moves_uci.length > 0;
@@ -253,7 +264,7 @@ export function OnlineGamePage() {
     <div className="game">
       <div className="boardcol">
         <div className="pbar">
-          <div className="pname"><i className={`swatch ${top}`} /><Avatar url={avatarOf(top)} name={name(top)} size={24} />{name(top)}{ratingOf(top) !== undefined && <span className="rating">{ratingOf(top)}</span>}</div>
+          <div className="pname"><i className={`swatch ${top}`} /><Avatar url={avatarOf(top)} name={name(top)} size={24} />{name(top)}{ratingOf(top)}</div>
           <Captures game={shown} color={top} />
           {clockOf(top)}
         </div>
@@ -261,7 +272,7 @@ export function OnlineGamePage() {
           arrow={game.status === 'finished' ? betterMove(analysis.state, game.moves_uci, shownMoves.length) : null}
           onBlocked={() => active && setMsg(myColor ? 'Warte auf den Zug deines Gegners.' : null)} />
         <div className="pbar">
-          <div className="pname"><i className={`swatch ${bottom}`} /><Avatar url={avatarOf(bottom)} name={name(bottom)} size={24} />{name(bottom)}{ratingOf(bottom) !== undefined && <span className="rating">{ratingOf(bottom)}</span>}</div>
+          <div className="pname"><i className={`swatch ${bottom}`} /><Avatar url={avatarOf(bottom)} name={name(bottom)} size={24} />{name(bottom)}{ratingOf(bottom)}</div>
           <Captures game={shown} color={bottom} />
           {clockOf(bottom)}
         </div>

@@ -16,10 +16,14 @@ export type GameRow = GameState & {
   created_at: string;
   finished_at: string | null;
   kind: 'friend' | 'random';
+  white_rating: number | null;
+  black_rating: number | null;
+  white_rating_diff: number | null;
+  black_rating_diff: number | null;
 };
 
 export const GAME_COLS =
-  'id, status, white_id, black_id, created_by, time_control, fen, moves_uci, base_ms, increment_ms, white_ms_left, black_ms_left, last_move_at, result, termination, draw_offer_by, version, created_at, finished_at, kind';
+  'id, status, white_id, black_id, created_by, time_control, fen, moves_uci, base_ms, increment_ms, white_ms_left, black_ms_left, last_move_at, result, termination, draw_offer_by, version, created_at, finished_at, kind, white_rating, black_rating, white_rating_diff, black_rating_diff';
 
 export const TIME_CONTROLS = [
   { id: '3+2', label: '3 + 2' },

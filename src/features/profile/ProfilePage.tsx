@@ -102,6 +102,12 @@ export function ProfilePage() {
           <button type="submit" disabled={currentName.trim() === profile.display_name || currentName.trim().length < 2}>Name speichern</button>
         </form>
         {msg && <p className={msg.ok ? 'success' : 'error'} role="status">{msg.text}</p>}
+        <p data-testid="profile-rating">
+          Deine Spielstärke: <b>{profile.random_rating ?? 1200}</b>
+          <span className="note"> · {profile.random_games ? `${profile.random_games} gewertete ${profile.random_games === 1 ? 'Partie' : 'Partien'}` : 'noch keine gewertete Partie'}
+            {(profile.random_games ?? 0) < 10 ? ' (vorläufig)' : ''}</span>
+        </p>
+        <p className="note">Jede beendete Online-Partie zählt, gegen Freunde und Zufallsgegner – sobald beide Seiten gezogen haben. Alle starten mit 1200.</p>
         <div className="row"><Link className="btn" to="/design">Brett und Figuren gestalten</Link></div>
       </section>
       <section className="panel">
