@@ -96,6 +96,15 @@ test('legal pages are linked from every page and fonts come from our own domain'
   expect(external).toEqual([]);
 });
 
+test('help page (support URL for the app stores) is linked from every page, without login', async ({ page }) => {
+  await page.goto('/spielen');
+  await page.getByRole('link', { name: 'Hilfe', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Hilfe' })).toBeVisible();
+  await page.getByText('Wie lösche ich mein Konto?').click();
+  await expect(page.getByTestId('help')).toContainText('Konto löschen');
+  await expect(page.getByRole('link', { name: 'info@knightcall.app' })).toHaveAttribute('href', 'mailto:info@knightcall.app');
+});
+
 test('can be added to the home screen: manifest and icons are served', async ({ page, request }) => {
   await page.goto('/');
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.webmanifest');

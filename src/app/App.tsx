@@ -18,6 +18,7 @@ import { TrainingPage } from '../features/training/TrainingPage';
 import { RandomPage } from '../features/random/RandomPage';
 import { ModerationPage } from '../features/moderation/ModerationPage';
 import { LegalFooter, LegalPage } from '../features/legal/LegalPage';
+import { HelpPage } from '../features/help/HelpPage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { HomePage } from './HomePage';
 import { LicensesPage } from './LicensesPage';
@@ -85,6 +86,7 @@ export function App() {
             <Route path="/zufall" element={<RandomPage />} />
             <Route path="/moderation" element={<ModerationPage />} />
             <Route path="/lizenzen" element={<LicensesPage />} />
+            <Route path="/hilfe" element={<HelpPage />} />
             <Route path="/impressum" element={<LegalPage slug="impressum" />} />
             <Route path="/datenschutz" element={<LegalPage slug="datenschutz" />} />
             <Route path="/agb" element={<LegalPage slug="agb" />} />
