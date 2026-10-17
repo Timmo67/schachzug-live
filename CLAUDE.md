@@ -123,6 +123,7 @@ docs/
   Versand: Android über FCM HTTP v1 (Secret `FCM_SERVICE_ACCOUNT` = Service-Account-JSON), iOS direkt über APNs (Secrets `APNS_KEY`, `APNS_KEY_ID`, `APNS_TEAM_ID`, optional `APNS_SANDBOX=1`); ohne Secrets Status `skipped`. Ungültige Tokens werden per `forget_push_token` abgehängt (`user_id = null`, kein delete). Logik `supabase/functions/_shared/push.ts` (Vitest).
   Client `src/features/notify/push.ts`: nur in der App; Berechtigung nach dem Anmelden, `register_push_token`, beim Abmelden `unregister_push_token`, Tippen öffnet `data.url`. Im Vordergrund keine System-Pushes (`presentationOptions: []`), dort gibt es die In-App-Hinweise. Android braucht `google-services.json` (GitHub-Secret `GOOGLE_SERVICES_JSON`, Workflow schreibt die Datei und setzt `VITE_PUSH_ANDROID=1`, sonst bleibt Push in der Android-App aus). Statusleisten-Symbol `ic_stat_knightcall`. iOS: `AppDelegate` leitet den Token weiter, `App.entitlements` (aps-environment).
   pg_net liegt im Schema `extensions` (Produktion vom Auftraggeber per SQL-Editor verschoben, 15.10.2026).
+- **Vereine (Idee 17.10.2026):** als Erweiterung geplant (M6 in `docs/ROADMAP.md`, Details in `docs/KONZEPT.md` „Vereine“), nach M4 und App-Store-Start.
 - Nächster Schritt: M4 Abos im Stripe-Testmodus, wenn Stripe-Konto da ist. Firma (UG) später. Auftraggeber: E-Mail-Vorlagen, eRecht24-Texte, AV-Verträge (Supabase, Cloudflare, Resend).
 
 ## Befehle

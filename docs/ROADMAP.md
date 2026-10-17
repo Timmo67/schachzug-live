@@ -58,5 +58,12 @@ Jeder Meilenstein endet mit einer lauffähigen Version und einer kurzen deutsche
 - Benachrichtigungen bei weiteren Tests verfeinern (Ton ist abschaltbar, Standard aus). – Zuverlässigkeit nach Handy-Sperre verbessert 12.10.2026.
 - **Reihenfolge (12.10.2026 bestätigt):** Analyse → Rätsel → Training → Zufallsgegner (vorher Melden/Blockieren).
 
+## M6 – Vereine (nach M4 Abos und App-Store-Start; Konzept siehe KONZEPT.md „Vereine“)
+Vorgeschlagene Reihenfolge (17.10.2026): erst Abos und Store-Start, dann Vereine. Ideal: ein Testverein, der die Turnierregeln mitgestaltet.
+- **Schritt 1 – Verein und Vereinsturniere (Erwachsene):** Verein anlegen, Mitglieder per Link/QR, Rollen (Admin, Turnierleiter, Mitglied); Turniere mit Regeln des Vereins (Bedenkzeit, Runden, Start, Anmeldeschluss, jeder gegen jeden / Schweizer System, gewertet, Kamera Pflicht); Anmeldung, automatische Paarung und Partiestart, Tabelle, Push zu jeder Runde. Umfang etwa wie Zufallsgegner + Spielstärke zusammen.
+- **Schritt 2 – Verein gegen Verein:** Mannschaftskampf an 4–8 Brettern, Aufstellung, Brettpunkte, Ergebnisseite.
+- **Schritt 3 – Jugend, Trainer, Liga:** Elternfreigabe und Minderjährigenschutz (vorher rechtlich prüfen), Trainer-Modus, Online-Liga zwischen Vereinen.
+- **Auftraggeber muss:** Preis für das Vereins-Abo festlegen, Testverein finden, Jugendschutz mit Anwalt klären (vor Schritt 3).
+
 ## Später (Ausbaustufe 2, ca. 400 h)
-Analyse + Puzzles (Stockfish WASM) · KI-Coach · private Turniere · Gruppen-Video und Zuschauer (LiveKit) · Partie-Aufzeichnung mit Video · Vereins-/Trainermodus · Familienabo.
+Analyse + Puzzles (Stockfish WASM) · KI-Coach · private Turniere · Gruppen-Video und Zuschauer (LiveKit) · Partie-Aufzeichnung mit Video · Trainermodus (siehe M6) · Familienabo.
