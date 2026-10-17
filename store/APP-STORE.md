@@ -9,7 +9,7 @@ Neu erzeugen: lokales Supabase starten, dann `STORE_SHOTS=1 npx playwright test 
 | Feld | Wert |
 |---|---|
 | Name (max. 30) | Knightcall |
-| Untertitel (max. 30) | Schach mit Freunden per Video |
+| Untertitel (max. 30) | Schach mit Freunden per Video (bestätigt) |
 | Bundle-ID | app.knightcall |
 | Hauptkategorie | Spiele → Brettspiele |
 | Zweitkategorie | Spiele → Strategie |
@@ -88,7 +88,7 @@ Muss zur Datenschutzerklärung und zu `ios/App/App/PrivacyInfo.xcprivacy` passen
 ## Altersfreigabe
 
 Antworten im Fragebogen: Nachrichten und Chat **ja**, nutzergenerierte Inhalte **ja**, Glücksspiel/Gewalt/Werbung **nein**.
-Da die Beta nur ab 18 ist, schlage ich **18+** vor. Entscheidung beim Auftraggeber (13+ wäre wegen des Chats mit Fremden nur mit Zusatzschutz für Minderjährige möglich, siehe Konzept).
+Freigabe: **18+** (vom Auftraggeber bestätigt, 17.10.2026; die Beta ist nur ab 18).
 
 ## Abgleich mit Apples Prüfregeln
 
