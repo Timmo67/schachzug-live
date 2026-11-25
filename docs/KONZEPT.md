@@ -1,4 +1,4 @@
-# Konzept – Schachzug Live (Stand 09.10.2026)
+# Konzept – Knightcall (früher Schachzug Live) (Stand 09.10.2026)
 
 Vollständiges Konzept mit Quellen, Kosten und Architekturbild (Claude Doc):
 https://claude.ai/code/artifact/124b646a-a6a6-4b6b-a018-3b140256c65c
