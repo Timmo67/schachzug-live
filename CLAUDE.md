@@ -1,9 +1,9 @@
-# CLAUDE.md – Knightcall (Repo: schachzug-live)
+# CLAUDE.md – Knightcall (Repo: knightcall)
 
 Diese Datei ist die Arbeitsanweisung für Claude Code. Lies sie zu Beginn jeder Sitzung.
 
 ## Produkt in einem Satz
-Produktname: **Knightcall** (früher Arbeitstitel „Schachzug Live“; Repo- und Projektnamen bleiben).
+Produktname: **Knightcall** (früher Arbeitstitel „Schachzug Live“). Umbenennung 25.11.2026 vom Auftraggeber freigegeben: GitHub-Repo `Timmo67/knightcall` (vorher `schachzug-live`, GitHub leitet alte Links weiter), Paket und lokales Supabase `knightcall`, Supabase-Anzeigename „Knightcall“. Bewusst **nicht** umbenannt: Supabase-Ref `jpdlxzpzeswkgsmderwh`, Cloudflare-Pages-Projekt und `schachzug-live.pages.dev`, Firebase-Projekt-ID, eingespielte Migrationen, `prototype/schachzug-live.html`.
 Online-Schach mit Freunden **mit eingebautem Videochat neben dem Brett**, als Abo-App für Web, iOS und Android aus einer Codebasis.
 
 Ausführliches Konzept: `docs/KONZEPT.md`. Reihenfolge der Arbeit: `docs/ROADMAP.md`.

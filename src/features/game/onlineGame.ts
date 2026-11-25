@@ -133,7 +133,7 @@ export function toPgn(g: GameRow, white: string, black: string): string {
   const date = new Date(g.created_at);
   const d = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
   chess.setHeader('Event', 'Knightcall');
-  chess.setHeader('Site', 'schachzug-live');
+  chess.setHeader('Site', 'knightcall.app');
   chess.setHeader('Date', d);
   chess.setHeader('White', white);
   chess.setHeader('Black', black);
@@ -155,7 +155,7 @@ export function downloadPgn(g: GameRow, white: string, black: string) {
   const blob = new Blob([toPgn(g, white, black)], { type: 'application/x-chess-pgn' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `schachzug-${g.created_at.slice(0, 10)}-${white}-vs-${black}.pgn`.replace(/[^\w.-]+/g, '_');
+  a.download = `knightcall-${g.created_at.slice(0, 10)}-${white}-vs-${black}.pgn`.replace(/[^\w.-]+/g, '_');
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
